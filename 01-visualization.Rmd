@@ -14,15 +14,9 @@ output:
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-## Introduction to viz
 
-Visualisation of your analysis results or data is not only the matter of taste but must be effective and present results/data undistorted.
+Visualisation of your analysis results or data is not only the matter of taste but must be effective and present your results and data honestly.
 
-- Effective graph tells the story
-- Undistorted means that quantitative information can be correctly evaluated by human eye (common example of data distortion is piegraph).
-
-
-This list is nonexhaustive, but honest message can not be communicated with misrepresented data.
 
 ## Sources
 
