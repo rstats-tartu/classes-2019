@@ -5,6 +5,20 @@ Taavi Päll
 
 Visualisation of your analysis results or data is not only the matter of taste but must be effective and present your results and data honestly.
 
+Numerical summaries, like arithmetic mean or correlation coeficient, can be deciving when shape of the data is not known or shown, think of average salary or **datasaurus**.
+
+Therefore, data visualization is natural starting point of every data analysis workflow.
+
+``` r
+library(datasauRus)
+ggplot2::ggplot(datasaurus_dozen) +
+  ggplot2::geom_point(ggplot2::aes(x, y)) +
+  ggplot2::facet_wrap(~ dataset) +
+  ggplot2::labs(title = "Datasurus: these 12 datasets are equal in standard measures:\nmean, standard deviation, and Pearson's correlation")
+```
+
+![](01-visualization_files/figure-markdown_github/unnamed-chunk-1-1.png)
+
 Sources
 -------
 
@@ -83,7 +97,7 @@ ggplot(data = mpg) +
   geom_point(mapping = aes(x = displ, y = hwy))
 ```
 
-![](01-visualization_files/figure-markdown_github/unnamed-chunk-4-1.png)
+![](01-visualization_files/figure-markdown_github/unnamed-chunk-5-1.png)
 
 Here you can see negative relationship between engine size and fuel consumption. It's probably no news to anyone that cars with big engiens guzzle more fuel.
 
@@ -126,7 +140,7 @@ ggplot(data = mpg) +
   geom_point(mapping = aes(x = displ, y = hwy, color = (hwy > 20 & displ > 5)))
 ```
 
-![](01-visualization_files/figure-markdown_github/unnamed-chunk-10-1.png)
+![](01-visualization_files/figure-markdown_github/unnamed-chunk-11-1.png)
 
 To get a clue about the nature of these outliers, we would like add more info present in our mpg dataset to plot. To add more variables to 2D scatterplot, we can use additional aesthetic mappings.
 
@@ -139,7 +153,7 @@ ggplot(data = mpg) +
   geom_point(mapping = aes(x = displ, y = hwy, color = class))
 ```
 
-![](01-visualization_files/figure-markdown_github/unnamed-chunk-11-1.png)
+![](01-visualization_files/figure-markdown_github/unnamed-chunk-12-1.png)
 
 We can see that most of the cars with large motors with better fuel efficency belong to sportscars (2seaters).
 
@@ -152,7 +166,7 @@ ggplot(data = mpg) +
 
     ## Warning: Using size for a discrete variable is not advised.
 
-![](01-visualization_files/figure-markdown_github/unnamed-chunk-12-1.png)
+![](01-visualization_files/figure-markdown_github/unnamed-chunk-13-1.png)
 
 Ouch, we get warning... seems its not a good idea. Why? What's wrong with the next plot where we have four, let's say diameter, categories ("tiny", "small", "big", "very big") and we want to map size aesthetic to diameter
 
@@ -163,7 +177,7 @@ ggplot(data = data_frame(x = c(1:4), y = 1, diameter = c("tiny", "small", "big",
 
     ## Warning: Using size for a discrete variable is not advised.
 
-![](01-visualization_files/figure-markdown_github/unnamed-chunk-13-1.png) Maybe this plot explains why it's generally not a good idea to map categorical variable to size aesthetic.
+![](01-visualization_files/figure-markdown_github/unnamed-chunk-14-1.png) Maybe this plot explains why it's generally not a good idea to map categorical variable to size aesthetic.
 
 Map **alpha** aesthetic to class:
 
@@ -184,7 +198,7 @@ ggplot(data = mpg) +
   geom_point(mapping = aes(x = displ, y = hwy), color = "blue") # try HEX code "#0000ff" or rgb(0,0,1)
 ```
 
-![](01-visualization_files/figure-markdown_github/unnamed-chunk-16-1.png)
+![](01-visualization_files/figure-markdown_github/unnamed-chunk-17-1.png)
 
 Here, the color is not connected to the variable in your dataset, but just changes the appearance of the plot. Therefore, to change the appearance of the plot, you need to assign value to aesthetic **outside** aes() in geom function.
 
@@ -207,7 +221,7 @@ ggplot(data = data_frame(x = rep(1:5, 5), y = rep(5:1, each = 5), shape = c(0:24
         axis.title = element_blank())
 ```
 
-![](01-visualization_files/figure-markdown_github/unnamed-chunk-17-1.png)
+![](01-visualization_files/figure-markdown_github/unnamed-chunk-18-1.png)
 
 Here, we used fill="green", color="blue", to change the appearance of the points, and also adjusted size of the points (size=3) for better visibility. Note the differences how fill and color work on different point shapes! Which is the default point shape in ggplot?
 
@@ -220,7 +234,7 @@ ggplot(data = mpg) +
   geom_point(mapping = aes(x = displ, y = hwy, color = "blue"))
 ```
 
-![](01-visualization_files/figure-markdown_github/unnamed-chunk-18-1.png)
+![](01-visualization_files/figure-markdown_github/unnamed-chunk-19-1.png)
 
 1.  Which variables in mpg are categorical? Which variables are continuous? (type ?mpg to read the documentation for the dataset). How can you see when you run mpg?
 
@@ -243,7 +257,7 @@ ggplot(data = mpg) +
   facet_wrap(~ class, nrow = 2)
 ```
 
-![](01-visualization_files/figure-markdown_github/unnamed-chunk-19-1.png) To specify name of a variable precede it by ~
+![](01-visualization_files/figure-markdown_github/unnamed-chunk-20-1.png) To specify name of a variable precede it by ~
 
 Two-way table, split by two variables, can be created using facet\_grid command:
 
@@ -253,7 +267,7 @@ ggplot(data = mpg) +
   facet_grid(drv ~ cyl) # (rows ~ columns)
 ```
 
-![](01-visualization_files/figure-markdown_github/unnamed-chunk-20-1.png)
+![](01-visualization_files/figure-markdown_github/unnamed-chunk-21-1.png)
 
 If you prefer to not facet in the rows or columns dimension, use a . instead of a variable name, e.g. + facet\_grid(. ~ cyl).
 
@@ -263,7 +277,7 @@ ggplot(data = mpg) +
   facet_grid(. ~ cyl) 
 ```
 
-![](01-visualization_files/figure-markdown_github/unnamed-chunk-21-1.png)
+![](01-visualization_files/figure-markdown_github/unnamed-chunk-22-1.png)
 
 ### Excercises
 
@@ -276,7 +290,7 @@ ggplot(data = mpg) +
   geom_point(mapping = aes(x = drv, y = cyl))
 ```
 
-![](01-visualization_files/figure-markdown_github/unnamed-chunk-22-1.png)
+![](01-visualization_files/figure-markdown_github/unnamed-chunk-23-1.png)
 
 1.  What plots does the following code make? What does . do?
 
@@ -286,7 +300,7 @@ ggplot(data = mpg) +
   facet_grid(drv ~ .)
 ```
 
-![](01-visualization_files/figure-markdown_github/unnamed-chunk-23-1.png)
+![](01-visualization_files/figure-markdown_github/unnamed-chunk-24-1.png)
 
 ``` r
 ggplot(data = mpg) + 
@@ -294,7 +308,7 @@ ggplot(data = mpg) +
   facet_grid(. ~ cyl)
 ```
 
-![](01-visualization_files/figure-markdown_github/unnamed-chunk-24-1.png)
+![](01-visualization_files/figure-markdown_github/unnamed-chunk-25-1.png)
 
 1.  Take the first faceted plot in this section:
 
@@ -304,7 +318,7 @@ ggplot(data = mpg) +
   facet_wrap(~ class, nrow = 2)
 ```
 
-![](01-visualization_files/figure-markdown_github/unnamed-chunk-25-1.png)
+![](01-visualization_files/figure-markdown_github/unnamed-chunk-26-1.png)
 
 What are the advantages to using faceting instead of the colour aesthetic? What are the disadvantages? How might the balance change if you had a larger dataset?
 
