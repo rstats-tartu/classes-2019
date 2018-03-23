@@ -25,6 +25,7 @@ Therefore, data visualization is natural starting point of every data analysis w
 
 ```{r}
 library(datasauRus)
+library(tidyverse)
 ggplot2::ggplot(datasaurus_dozen) +
   ggplot2::geom_point(ggplot2::aes(x, y)) +
   ggplot2::facet_wrap(~ dataset) +
@@ -61,7 +62,7 @@ library(tidyverse)
 
 
 ## First steps
-We need data..., ok, let's use ggplot2 built in dataset **mpg** with fuel economy data from 1999 and 2008 for 38 models of car:
+We need data to create plots! As for start, let's use ggplot2 built in dataset **mpg** with fuel economy data from 1999 and 2008 for 38 models of car:
 ```{r}
 mpg # aka ggplot::mpg
 ```
@@ -80,7 +81,9 @@ Here we put displ on the x-axis and hwy on the y-axis:
 
 ```{r}
 ggplot(data = mpg) + 
-  geom_point(mapping = aes(x = displ, y = hwy))
+  geom_point(mapping = aes(x = displ, y = hwy)) +
+  labs(x = "Engine displacement",
+       y = "Miles per gallon")
 ```
 
 Here you can see negative relationship between engine size and fuel consumption. It's probably no news to anyone that cars with big engiens guzzle more fuel.
@@ -103,27 +106,34 @@ ggplot(data = <DATA>) +
 
 1. Run ggplot(data = mpg). What do you see?
 ```{r}
-
+ggplot(data = mpg)
 ```
 
 2. How many rows are in mtcars dataset? How many columns?
 ```{r}
-
+mpg
 ```
+
+```{r}
+class(mpg)
+```
+
 
 3. What does the drv variable describe? Read help for ?mpg to find out.
 ```{r}
-
+?mpg
 ```
 
 4. Make scatterplot of *hwy* vs *cyl* using mpg data:
 ```{r}
-
+ggplot(data = mpg) +
+  geom_point(mapping = aes(x = cyl, y = hwy))
 ```
 
 5. What happens when you make a scatterplot of *class* versus *drv* using mpg data:
 ```{r}
-
+ggplot(data = mpg) +
+  geom_point(mapping = aes(x = class, y = drv))
 ```
 
 Is it useful?
@@ -131,7 +141,7 @@ Is it useful?
 ## Aesthetic mappings
 
 hwy ~ displ scatter plot tells us that there is linear relationship between engine size and fuel consumption: bigger engines use more fuel and are therefore less efficient.
-Nevertheless, if we look at the cars with huge engines (>5L), it's apparent that there are some outliers (plot below) that perform better than cars in thit engine class in general.
+Nevertheless, if we look at the cars with huge engines (>5L), it's apparent that there are some outliers (plot below) that perform better than cars in this engine class in general.
 
 What are those cars? Do they have something in common?
 
@@ -167,14 +177,17 @@ ggplot(data = data_frame(x = c(1:4), y = 1, diameter = c("tiny", "small", "big",
 ```
 Maybe this plot explains why it's generally not a good idea to map categorical variable to size aesthetic.
 
+## Excercise
 Map **alpha** aesthetic to class:
 ```{r}
-
+ggplot(data = mpg) + 
+  geom_point(mapping = aes(x = displ, y = hwy, alpha = class))
 ```
 
 Map **size** aesthetic to class:
 ```{r}
-
+ggplot(data = mpg) + 
+  geom_point(mapping = aes(x = displ, y = hwy, shape = class))
 ```
 
 Is everything ok with shapes?
@@ -187,7 +200,7 @@ You can change the appearance of your plot also manually: change the color or sh
 For example, let's suppose you want to make all points in plot blue:
 ```{r}
 ggplot(data = mpg) + 
-  geom_point(mapping = aes(x = displ, y = hwy), color = "blue") # try HEX code "#0000ff" or rgb(0,0,1)
+  geom_point(mapping = aes(x = displ, y = hwy), colour = "blue") # try HEX code "#0000ff" or rgb(0,0,1)
 ```
 
 Here, the color is not connected to the variable in your dataset, but just changes the appearance of the plot.
@@ -199,7 +212,7 @@ You just have to pick a value that makes sense for that aesthetic:
 - size of a point in mm
 - shape of a point as a number
 
-### Shape codes. 
+### Shape codes
 While colors and sizes are intuitive, it seems impossible to remember available point shape codes in R. The quickest way out of this is to know how to generate an example plot of the first 25 shapes quickly. Numbers next to shapes denote R shape number.
 
 ```{r}
@@ -211,6 +224,14 @@ ggplot(data = data_frame(x = rep(1:5, 5), y = rep(5:1, each = 5), shape = c(0:24
         axis.title = element_blank())
 ```
 
+Let's use more than 6 shapes:
+```{r}
+ggplot(data = mpg) + 
+  geom_point(mapping = aes(x = displ, y = hwy, shape = class), position = position_jitter(0.1)) +
+  scale_shape_manual(values = 0:6)
+```
+
+
 Here, we used fill="green", color="blue", to change the appearance of the points, and also adjusted size of the points (size=3) for better visibility. 
 Note the differences how fill and color work on different point shapes! Which is the default point shape in ggplot?
 
@@ -219,10 +240,14 @@ Note the differences how fill and color work on different point shapes! Which is
 1. What's wrong with this plot? Why are points not blue? Can you fix the code?
 ```{r}
 ggplot(data = mpg) +
-  geom_point(mapping = aes(x = displ, y = hwy, color = "blue"))
+  geom_point(mapping = aes(x = displ, y = hwy), color = "blue")
 ```
 
 2. Which variables in mpg are categorical? Which variables are continuous? (type ?mpg to read the documentation for the dataset). How can you see when you run mpg?
+```{r}
+mpg
+```
+
 
 3. Map a continuous variable to color, size, and shape. How do these aesthetics behave differently for categorical vs. continuous variables?
 
