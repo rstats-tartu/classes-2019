@@ -319,3 +319,7 @@ What are the advantages to using faceting instead of the colour aesthetic? What 
 5. Read ?facet_wrap. What does nrow do? What does ncol do? What other options control the layout of the individual panels? Why doesn’t facet_grid() have nrow and ncol argument?
 
 6. When using facet_grid() you should usually put the variable with more unique levels in the columns. Why?
+
+## Geometric objects aka geoms
+
+
