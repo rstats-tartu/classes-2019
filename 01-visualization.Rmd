@@ -260,18 +260,24 @@ mpg
 ## Adding (more) variables by facet_wrap
 So, we used color, shape and alpha (transparency) to add more data layers (groups, classes etc.) to otherwise two-dimentional graph. This allows visual inference of the distribution of the groups under comparison. But there is apparent limit how much of such information can be accomodated onto one graph before it gets too cluttered.
 
-For example, let's consider **gapmider** dataset on life expectancy, GDP per capita, and population by country. We want to plot life expectancy versus GDP per capita
+For example, let's consider **gapmider** dataset on life expectancy, GDP per capita, and population by country. We want to plot life expectancy versus GDP per capita and we add population size as size aesthetic, but then we have three further variables: country, continent and year... How can we visualize this data? Intuitively, we know that GDP and life expectancy have large variablity per contry and has changed a lot in time (years).
 
+> At the heart of quantitative reasoning is a single question: Compared to what? Small multiple designs.., answer directly by visually enforcing comparisons of changes, of the differences among objects, of the scope of alternatives. For a wide range of problems in data presentation, small multiples are the best design solution. Edward Tufte (Envisioning Information, p. 67).
+
+We can try to put different countries side-by-side by using small subplots. Fortunately, ggplot has easy way to do this: facet_wrap() and facet_grid() functions split up your dataset and generate multiple small plots arranged in an array. 
+facet_wrap() works with one variable and facet_grid() can use two variables.  
+
+First, again, let's load our test dataset (install if necessay using install.packages("gapminder")):
 ```{r}
 library(gapminder)
 ```
 
+Have a look at the table, we have four continuous variables and to categorical variables (which ones?):
 ```{r}
 gapminder
 ```
 
 
-> At the heart of quantitative reasoning is a single question: Compared to what? Small multiple designs.., answer directly by visually enforcing comparisons of changes, of the differences among objects, of the scope of alternatives. For a wide range of problems in data presentation, small multiples are the best design solution. Edward Tufte (Envisioning Information, p. 67).
 
 
 
