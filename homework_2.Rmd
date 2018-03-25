@@ -1,8 +1,9 @@
 ---
 title: "Untitled"
 author: "Taavi Päll"
-date: "25 3 2018"
-output: html_document
+date: "26 3 2018"
+output: 
+  github_document: default
 ---
 
 ```{r setup, include=FALSE}
@@ -10,3 +11,6 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 
+- Most geoms and stats come in pairs that are almost always used in concert. Read through the documentation and make a list of all the pairs. What do they have in common?
+
+3. Compare and contrast geom_jitter() with geom_count().

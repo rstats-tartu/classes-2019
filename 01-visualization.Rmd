@@ -527,7 +527,6 @@ ggplot(data = diamonds) +
   )
 ```
 
-
 Mean and SE:
 ```{r}
 ggplot(data = diamonds) + 
@@ -538,5 +537,84 @@ ggplot(data = diamonds) +
 ```
 
 If you want to use mean +/- SD like this, you need mean_sdl() function from Hmisc package (meaning, that you need to install Hmisc).
+
+### Exercises
+
+1. What is the default geom associated with stat_summary()? How could you rewrite the previous plot to use that geom function instead of the stat function?
+
+2. What does geom_col() do? How is it different to geom_bar()?
+
+3. What variables does stat_smooth() compute? What parameters control its behaviour?
+
+4. In our proportion bar chart, we need to set group = 1. Why? In other words what is the problem with these two graphs?
+```{r}
+ggplot(data = diamonds) + 
+  geom_bar(mapping = aes(x = cut, y = ..prop..))
+ggplot(data = diamonds) + 
+  geom_bar(mapping = aes(x = cut, fill = color, y = ..prop..))
+```
+
+## Position adjustments - how to get those bars side-by-side
+
+There is more you need to know about bar charts. You can easily update diamonds cut counts by mapping cut additonally either to color or fill (whereas fill seems to be more useful):
+```{r}
+ggplot(data = diamonds) + 
+  stat_count(mapping = aes(x = cut, fill = cut))
+```
+
+But what happens when we map fill to another variable in diamonds data, like clarity:
+```{r}
+ggplot(data = diamonds) + 
+  stat_count(mapping = aes(x = cut, fill = clarity))
+```
+
+
+Wow, bars are automatically __stacked__ showing the proportions of different diamond clarity classes within cut quality classes.
+
+If you want to get these stacked bars side-by-side, you need to change the position adjustment argument, which is set to "stacked" by default. There are three other options: "identity", "dodge" and "fill".
+
+- position = "identity" will place each object exactly where it falls in the context of the graph. Its generally not useful with bar graphs, as all bars are behind each other and this plot can be easily mixed up with position = "stacked":
+```{r}
+ggplot(data = diamonds) + 
+  stat_count(mapping = aes(x = cut, fill = clarity), position = "identity")
+```
+
+Position "stacked" is naturally default in scatterplot. 
+
+- position = "fill" works like stacking, but makes each set of stacked bars the same height. This makes it easier to compare proportions across groups.
+
+```{r}
+ggplot(data = diamonds) + 
+  geom_bar(mapping = aes(x = cut, fill = clarity), position = "fill")
+```
+
+- position = "dodge" places overlapping objects directly beside one another. This makes it easier to compare individual values.
+
+```{r}
+ggplot(data = diamonds) + 
+  geom_bar(mapping = aes(x = cut, fill = clarity), position = "dodge")
+```
+
+There is another position adjustment function for scatterplots that helps mitigate overplotting: position = "jitter":
+```{r}
+ggplot(data = mpg) +
+  geom_point(mapping = aes(x = displ, y = hwy), position = "jitter")
+```
+
+"jitter" adds small amount of random noise to your raw data, so that each point gets moved away from its original position. This way you can reveal very similar data points that fall into same place in plot grid.
+
+To learn more about a position adjustment, look up the help page associated with each adjustment: ?position_dodge, ?position_fill, ?position_identity, ?position_jitter, and ?position_stack.
+
+### Exercises
+
+1. What is the problem with this plot? How could you improve it?
+```{r}
+ggplot(data = mpg, mapping = aes(x = cty, y = hwy)) + 
+  geom_point()
+```
+
+2. What parameters to geom_jitter() control the amount of jittering?
+
+3. What’s the default position adjustment for geom_boxplot()? Create a visualisation of the mpg dataset that demonstrates it.
 
 
