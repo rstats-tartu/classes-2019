@@ -16,10 +16,10 @@ knitr::opts_chunk$set(echo = TRUE)
 
 # Class I
 
-Visualisation of your analysis results or data is not only the matter of taste but must be effective and present your results and data honestly.
+Visualization of your analysis results or data is not only the matter of taste but must be effective and present your results and data honestly.
 
 
-Numerical summaries, like arithmetic mean or correlation coeficient, can be deciving when shape of the data is not known or shown, think of average salary or **datasaurus**.
+Numerical summaries, like arithmetic mean or correlation coefficient, can be deceiving when shape of the data is not known or shown, think of average salary or **datasaurus**.
 
 
 Therefore, data visualization is natural starting point of every data analysis workflow.
@@ -83,13 +83,13 @@ ggplot(data = mpg) +
        y = "Miles per gallon")
 ```
 
-Here you can see negative relationship between engine size and fuel consumption. It's probably no news to anyone that cars with big engiens guzzle more fuel.
+Here you can see negative relationship between engine size and fuel consumption. It's probably no news to anyone that cars with big engines guzzle more fuel.
 
 + **ggplot2 works iteratively** -- you start with a layer showing the raw data and then add layers of geoms, annotations, and statistical summaries.
 
 To compose plots, you have to supply minimally:
 
-+ **Data** that you want to visualise and 
++ **Data** that you want to visualize and 
 + **aes**thetic **mappings** -- what's on x-axis, what's on y-axis, and how to you want to group and color your data. Mapped arguments must be found in your data!
 + **Layers** made up of **geom**etric elements: points, lines, boxes, etc. What's shown on plot.
 
@@ -158,7 +158,7 @@ ggplot(data = mpg) +
   geom_point(mapping = aes(x = displ, y = hwy, color = class))
 ```
 
-We can see that most of the cars with large motors with better fuel efficency belong to sportscars (2seaters).
+We can see that most of the cars with large motors with better fuel efficiency belong to sports cars (2seaters).
 
 Let's recreate previous plot with class mapped to size of each point:
 ```{r}
@@ -187,7 +187,7 @@ ggplot(data = mpg) +
   geom_point(mapping = aes(x = displ, y = hwy, shape = class))
 ```
 
-Is everything ok with shapes?
+Is everything OK with shapes?
 
 > When you set your aesthetic via mapping, ggplot automatically takes care of the rest: it finds best scale to display selected aesthetic and draws a legend. Note that this happens only when you map aesthetic within aes() function.
  
@@ -258,16 +258,16 @@ mpg
 # Class II
 
 ## Adding (more) variables by facet_wrap
-So, we used color, shape and alpha (transparency) to add more data layers (groups, classes etc.) to otherwise two-dimentional graph. This allows visual inference of the distribution of the groups under comparison. But there is apparent limit how much of such information can be accomodated onto one graph before it gets too cluttered.
+So, we used color, shape and alpha (transparency) to add more data layers (groups, classes etc.) to otherwise two-dimensional graph. This allows visual inference of the distribution of the groups under comparison. But there is apparent limit how much of such information can be accommodated onto one graph before it gets too cluttered.
 
-For example, let's consider **gapmider** dataset on life expectancy, GDP per capita, and population by country. We want to plot life expectancy versus GDP per capita and we add population size as size aesthetic, but then we have three further variables: country, continent and year... How can we visualize this data? Intuitively, we know that GDP and life expectancy have large variablity per contry and has changed a lot in time (years).
+For example, let's consider **gapmider** dataset on life expectancy, GDP per capita, and population by country. We want to plot life expectancy versus GDP per capita and we add population size as size aesthetic, but then we have three further variables: country, continent and year... How can we visualize this data? Intuitively, we know that GDP and life expectancy have large variability per country and has changed a lot in time (years).
 
 > At the heart of quantitative reasoning is a single question: Compared to what? Small multiple designs.., answer directly by visually enforcing comparisons of changes, of the differences among objects, of the scope of alternatives. For a wide range of problems in data presentation, small multiples are the best design solution. Edward Tufte (Envisioning Information, p. 67).
 
 We can try to put different countries side-by-side by using small subplots. Fortunately, ggplot has easy way to do this: facet_wrap() and facet_grid() functions split up your dataset and generate multiple small plots arranged in an array. 
 facet_wrap() works with one variable and facet_grid() can use two variables.  
 
-First, again, let's load our test dataset (install if necessay using install.packages("gapminder")):
+First, again, let's load our test dataset (install if necessary using install.packages("gapminder")):
 ```{r}
 library(gapminder)
 ```
