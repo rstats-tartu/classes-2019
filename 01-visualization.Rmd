@@ -14,6 +14,7 @@ output:
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
+# Class I
 
 Visualisation of your analysis results or data is not only the matter of taste but must be effective and present your results and data honestly.
 
@@ -33,10 +34,6 @@ ggplot2::ggplot(datasaurus_dozen) +
 ```
 
 Here we get started with R from the standpoint of visualization. (Luckily for you it's not data structures or subsetting. We leave these topics for later, so don't be worried.)
-
-
-
-
 
 ## Sources
 - This tutorial is heavily based on "Data visualization with ggplot2" chapter in [R4DS](http://r4ds.had.co.nz/data-visualisation.html) by G. Grolemund and H. Wickham.
@@ -248,6 +245,7 @@ ggplot(data = mpg) +
 mpg
 ```
 
+## Homework
 
 3. Map a continuous variable to color, size, and shape. How do these aesthetics behave differently for categorical vs. continuous variables?
 
@@ -256,4 +254,24 @@ mpg
 5. What does the stroke aesthetic do? What shapes does it work with? (Hint: use ?geom_point)
 
 6. What happens if you map an aesthetic to something other than a variable name, like aes(colour = displ < 5)?
+
+# Class II
+
+## Adding (more) variables by facet_wrap
+So, we used color, shape and alpha (transparency) to add more data layers (groups, classes etc.) to otherwise two-dimentional graph. This allows visual inference of the distribution of the groups under comparison. But there is apparent limit how much of such information can be accomodated onto one graph before it gets too cluttered.
+
+For example, let's consider **gapmider** dataset on life expectancy, GDP per capita, and population by country. We want to plot life expectancy versus GDP per capita
+
+```{r}
+library(gapminder)
+```
+
+```{r}
+gapminder
+```
+
+
+> At the heart of quantitative reasoning is a single question: Compared to what? Small multiple designs.., answer directly by visually enforcing comparisons of changes, of the differences among objects, of the scope of alternatives. For a wide range of problems in data presentation, small multiples are the best design solution. Edward Tufte (Envisioning Information, p. 67).
+
+
 
