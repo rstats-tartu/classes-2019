@@ -260,7 +260,7 @@ mpg
 ## Adding (more) variables by facet_wrap
 We used color, shape and alpha (transparency) to display additional subset in a two-dimensional graph. Using different colours allows visual inference of the distribution of the groups under comparison. But there is apparent limit how much of such information can be accommodated onto one graph before it gets too cluttered.
 
-In addition to reducing visual clutter and overplotting, we can use small subplots just as an another way to bring out subsets from our data. Series of small subplots (multiples) use same scale and axes allowing easier comparisons and are considered very efficent design. Fortunately, ggplot has easy way to do this: facet_wrap() and facet_grid() functions split up your dataset and generate multiple small plots arranged in an array. facet_wrap() works with one variable and facet_grid() can use two variables.  
+In addition to reducing visual clutter and overplotting, we can use small subplots just as an another way to bring out subsets from our data. Series of small subplots (multiples) use same scale and axes allowing easier comparisons and are considered very efficient design. Fortunately, ggplot has easy way to do this: facet_wrap() and facet_grid() functions split up your dataset and generate multiple small plots arranged in an array. facet_wrap() works with one variable and facet_grid() can use two variables.  
 
 > At the heart of quantitative reasoning is a single question: Compared to what? Small multiple designs.. answer directly by visually enforcing comparisons of changes, of the differences among objects, of the scope of alternatives. For a wide range of problems in data presentation, small multiples are the best design solution. Edward Tufte (Envisioning Information, p. 67).
 
@@ -278,7 +278,7 @@ ggplot(data = mpg) +
   facet_grid(drv ~ cyl)
 ```
 
-Note that the variables, used for splitting up data and arranging facets row and columnwise, are specified in facet_grid() by formula: facet_grid(rows ~ columns).
+Note that the variables, used for splitting up data and arranging facets row and column-wise, are specified in facet_grid() by formula: facet_grid(rows ~ columns).
 
 If you want to omit rows or columns in facet_grid() use `. ~ var` or `var ~ .`, respectively.
 ```{r}
@@ -316,10 +316,68 @@ ggplot(data = mpg) +
 
 What are the advantages to using faceting instead of the colour aesthetic? What are the disadvantages? How might the balance change if you had a larger dataset?
 
-5. Read ?facet_wrap. What does nrow do? What does ncol do? What other options control the layout of the individual panels? Why doesn’t facet_grid() have nrow and ncol argument?
+5. Read ?facet_wrap. What does nrow do? What does ncol do? What other options control the layout of the individual panels? Why doesn't facet_grid() have nrow and ncol argument?
 
 6. When using facet_grid() you should usually put the variable with more unique levels in the columns. Why?
 
 ## Geometric objects aka geoms
+To change the geom in your plot, change the __geom function__ that you add to ggplot(). 
+
+For instance, to create already familiar dot plot use geom_point():
+```{r}
+ggplot(data = mpg) + 
+  geom_point(mapping = aes(x = displ, y = hwy))
+```
+
+To create line graph with loess smooth line fitted to these dots use geom_smooth():
+```{r}
+ggplot(data = mpg) + 
+  geom_smooth(mapping = aes(x = displ, y = hwy))
+```
+
+Every geom function in ggplot2 takes a mapping argument. 
+
+However, note that __not every aesthetic works with every geom.__
+
+- You could set the shape of a point, but you couldn't set the "shape" of a line. 
+- On the other hand, you could set the linetype of a line. 
+
+We can tweak the above plot by mapping each type of drivetrain (drv) to different linetype.
+
+```{r}
+ggplot(data = mpg) + 
+  geom_smooth(mapping = aes(x = displ, y = hwy, linetype = drv))
+```
+
+Here, 4 stands for four-wheel drive, f for front-wheel drive, and r for rear-wheel drive. So four-wheel cars are mapped to "solid" line, front-wheel cars to "dashed" line, and rear-wheel cars to "longdash" line. For more linetypes and their numeric codes please have a look at R cookbook: http://www.cookbook-r.com/Graphs/Shapes_and_line_types/.
+
+Currently, ggplot2 provides over 40 geoms:
+```{r}
+gg2 <- lsf.str("package:ggplot2")
+gg2[grep("^geom", gg2)]
+```
+
+To learn more about any single geom, use help, like: ?geom_smooth.
+
+Many geoms, like __geom_smooth(), use a single geometric object to display multiple rows of data__. For these geoms, __you can set the group aesthetic to a categorical variable to draw multiple objects__. 
+Note that in case of the group aesthetic ggplot2 does not add a legend or distinguishing features to the geoms. So you can plot for example all your bootstrapped linear model fits on one plot to visualize uncertainty, whereas all these lines are of the same color/type.
+
+```{r}
+ggplot(data = mpg) +
+  geom_smooth(mapping = aes(x = displ, y = hwy, group = drv))
+```
+
+Other color, alpha etc aestheic mappings similarily group your data for display but also add by default legend to the plot. To hide legend, set show.legend to FALSE:
+```{r}
+ggplot(data = mpg) +
+  geom_smooth(
+    mapping = aes(x = displ, y = hwy, color = drv),
+    show.legend = FALSE
+  )
+```
+
+    
+
+
 
 
