@@ -10,17 +10,25 @@ output:
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
+1. Take the first faceted plot in this section:
+```{r}
+ggplot(data = mpg) + 
+  geom_point(mapping = aes(x = displ, y = hwy)) + 
+  facet_wrap(~ class, nrow = 2)
+```
 
-- Recreate the R code necessary to generate the following graphs.
+What are the advantages to using faceting instead of the colour aesthetic? What are the disadvantages? How might the balance change if you had a larger dataset?
+
+2. Recreate the R code necessary to generate the following graphs.
 ```{r}
 knitr::include_graphics(glue::glue("plots/fig{1:6}.png"))
 ```
 
-- Most geoms and stats come in pairs that are almost always used in concert. Read through the documentation and make a list of all the pairs. What do they have in common?
+3. Most geoms and stats come in pairs that are almost always used in concert. Read through the documentation and make a list of all the pairs. What do they have in common?
 
-- Compare and contrast geom_jitter() with geom_count().
+4. Compare and contrast geom_jitter() with geom_count().
 
-- What does the plot below tell you about the relationship between city and highway mpg (fuel consumption)? Why is coord_fixed() important? What does geom_abline() do?
+5. What does the plot below tell you about the relationship between city and highway mpg (fuel consumption)? Why is coord_fixed() important? What does geom_abline() do?
 ```{r}
 ggplot(data = mpg, mapping = aes(x = cty, y = hwy)) +
   geom_point() + 
