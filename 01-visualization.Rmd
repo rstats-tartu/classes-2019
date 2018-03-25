@@ -349,7 +349,11 @@ ggplot(data = mpg) +
   geom_smooth(mapping = aes(x = displ, y = hwy, linetype = drv))
 ```
 
-Here, 4 stands for four-wheel drive, f for front-wheel drive, and r for rear-wheel drive. So four-wheel cars are mapped to "solid" line, front-wheel cars to "dashed" line, and rear-wheel cars to "longdash" line. For more linetypes and their numeric codes please have a look at R cookbook: http://www.cookbook-r.com/Graphs/Shapes_and_line_types/.
+Here, 4 stands for four-wheel drive, f for front-wheel drive, and r for rear-wheel drive. 
+
+Four-wheel cars are mapped to "solid" line, front-wheel cars to "dashed" line, and rear-wheel cars to "longdash" line. 
+
+For more linetypes and their numeric codes please have a look at R cookbook: http://www.cookbook-r.com/Graphs/Shapes_and_line_types/.
 
 Currently, ggplot2 provides over 40 geoms:
 ```{r}
@@ -360,14 +364,17 @@ gg2[grep("^geom", gg2)]
 To learn more about any single geom, use help, like: ?geom_smooth.
 
 Many geoms, like __geom_smooth(), use a single geometric object to display multiple rows of data__. For these geoms, __you can set the group aesthetic to a categorical variable to draw multiple objects__. 
-Note that in case of the group aesthetic ggplot2 does not add a legend or distinguishing features to the geoms. So you can plot for example all your bootstrapped linear model fits on one plot to visualize uncertainty, whereas all these lines are of the same color/type.
+
+Note that in case of the group aesthetic ggplot2 does not add a legend or distinguishing features to the geoms. 
+
+You can plot for example all your bootstrapped linear model fits on one plot to visualize uncertainty, whereas all these lines are of the same color/type.
 
 ```{r}
 ggplot(data = mpg) +
   geom_smooth(mapping = aes(x = displ, y = hwy, group = drv))
 ```
 
-Other color, alpha etc aestheic mappings similarily group your data for display but also add by default legend to the plot. To hide legend, set show.legend to FALSE:
+Other aestheic mappings (color, alpha etc) similarily group your data for display but also add by default legend to the plot. To hide legend, set show.legend to FALSE:
 ```{r}
 ggplot(data = mpg) +
   geom_smooth(
@@ -376,8 +383,160 @@ ggplot(data = mpg) +
   )
 ```
 
-    
+To display multiple geoms in the same plot, add multiple geom functions to ggplot():
+```{r}
+ggplot(data = mpg) + 
+  geom_point(mapping = aes(x = displ, y = hwy)) +
+  geom_smooth(mapping = aes(x = displ, y = hwy))
+```
+
+Probably you notice, that if we go with aethetic mappings as we used to, by specifing them within geom function, we introduce some code duplication. This can be easily avoided by moving aes() part from geom_ to the ggplot():
+```{r}
+ggplot(data = mpg, mapping = aes(x = displ, y = hwy)) + 
+  geom_point() +
+  geom_smooth()
+```
+
+Now, ggplot2 uses this mapping globally in all geoms.
+
+If you place mappings in a geom function, ggplot2 will treat them as local mappings for the layer. It will use these mappings to extend or overwrite the global mappings for that layer only. This way it's possible to use different aesthetics in different layers (for example, if you wish to plot model fit over data points).
+
+Here, we map color to the class of cars, whereas geom_smooth still plots only one line:
+```{r}
+ggplot(data = mpg, mapping = aes(x = displ, y = hwy)) + 
+  geom_point(mapping = aes(color = class)) + 
+  geom_smooth()
+```
+
+Importantly, you can use the same idea to specify different data for each layer: 
+```{r}
+ggplot(data = mpg, mapping = aes(x = displ, y = hwy)) + 
+  geom_point(mapping = aes(color = class)) + 
+  geom_smooth(data = filter(mpg, class == "subcompact"), se = FALSE)
+```
+Above, our smooth line displays just a subset of the mpg dataset, the subcompact cars. The local data argument in geom_smooth() overrides the global data argument in ggplot() for that layer only.
+
+## Exercises
+
+1. What geom would you use to draw a line chart? A boxplot? A histogram? An area chart?
+
+2. Run this code in your head and predict what the output will look like. Then, run the code in R and check your predictions.
+```{r}
+ggplot(data = mpg, mapping = aes(x = displ, y = hwy, color = drv)) + 
+  geom_point() + 
+  geom_smooth(se = FALSE)
+```
 
 
+3. What does show.legend = FALSE do? What happens if you remove it?
+
+4. What does the se argument to geom_smooth() do?
+
+5. Will these two graphs look different? Why/why not?
+```{r}
+ggplot(data = mpg, mapping = aes(x = displ, y = hwy)) + 
+  geom_point() + 
+  geom_smooth()
+
+ggplot() + 
+  geom_point(data = mpg, mapping = aes(x = displ, y = hwy)) + 
+  geom_smooth(data = mpg, mapping = aes(x = displ, y = hwy))
+```
+
+6. Recreate the R code necessary to generate the following graphs.
+```{r}
+knitr::include_graphics(glue::glue("plots/fig{1:6}.png"))
+```
+
+
+## Plotting statistical transformations - bar graph tricks
+
+Bar graphs are special among ggplot geoms. This is because by default they do some calculations with data before plotting. To get an idea, please have a look at the following bar graph, created by geom_bar() function. 
+
+The chart below displays the total number of diamonds in the __diamonds__ dataset, grouped by cut. 
+```{r}
+ggplot(data = diamonds) + 
+  geom_bar(mapping = aes(x = cut))
+```
+
+Let's have a look at the diamonds dataset, containing the prices and other attributes of ~54000 diamonds.
+```{r}
+diamonds
+```
+
+Variable count is nowhere to be found... it's quite different from other plot types, like scatterplot,  that plot raw values.
+
+Other graphs, like bar charts, calculate new values to plot:
+
+- bar charts, histograms, and frequency polygons bin your data and then plot bin counts, the number of points that fall in each bin.
+
+- smoothers fit a model to your data and then plot predictions from the model.
+
+- boxplots compute a robust summary of the distribution and then display a specially formatted box.
+
+The algorithm used to calculate new values for a graph is called a stat, short for statistical transformation.
+
+You can learn which stat a geom uses by inspecting the default value for the stat argument in geom_ function. 
+
+For example, ?geom_bar shows that the default value for stat is "count".
+
+![geom_bar](plots/stat_count.png)
+
+You can use geoms and stats interchangeably. For example, you can recreate the previous plot using stat_count() instead of geom_bar():
+```{r}
+ggplot(data = diamonds) + 
+  stat_count(mapping = aes(x = cut))
+```
+
+This works because every geom has a default stat; and every stat has a default geom, meaning that you can use geoms without worrying about its underlying statistical transformation.
+
+There are three cases when you might want to specify stat explicitly:
+
+1. You might want to override the default stat. For example you have alredy summarised counts or means or whatever, then you need to change the default stat in geom_bar() to "identity":
+Let's create summarized dataset (don't worry about this code yet, we are going to this in the next classes):
+```{r}
+diamonds_summarised <- diamonds %>% 
+  group_by(cut) %>% 
+  summarise(N = n())
+```
+
+Here we (re)create diamond counts plot using summary data. Note that here we need to use also y-aesthetic!
+```{r}
+ggplot(data = diamonds_summarised) +
+  geom_bar(mapping = aes(x = cut, y = N), stat = "identity")
+```
+
+2. You might want to override the default mapping from transformed variables to aesthetics. For example, you might want to display a bar chart of proportion, rather than count:
+```{r}
+ggplot(data = diamonds) + 
+  geom_bar(mapping = aes(x = cut, y = ..prop.., group = 1))
+```
+
+To find the variables computed by the stat, look for the help section titled "computed variables".
+
+3. You might want to draw greater attention to the statistical transformation in your code. Meaning basically, that you want to plot some summary statistics like median and min/max or mean +/- SE.
+
+Median and min/max:
+```{r}
+ggplot(data = diamonds) + 
+  stat_summary(
+    mapping = aes(x = cut, y = depth),
+    fun.ymin = min,
+    fun.ymax = max,
+    fun.y = median
+  )
+```
+
+
+Mean and SE:
+```{r}
+ggplot(data = diamonds) + 
+  stat_summary(
+    mapping = aes(x = cut, y = depth),
+    fun.data = mean_se
+  )
+```
+
+If you want to use mean +/- SD like this, you need mean_sdl() function from Hmisc package (meaning, that you need to install Hmisc).
 
 
