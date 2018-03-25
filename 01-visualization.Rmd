@@ -629,13 +629,36 @@ Try to make this plot without flipping... x-axis labels are a mess!
 
 ```{r}
 # install.packages("sp")
+# level 0 map data was downloaded from http://www.gadm.org/country
 est <- read_rds("data/EST_adm0.rds")
 ggplot(est, aes(long, lat, group = group)) +
   geom_polygon(fill = "white", colour = "black")
 
-ggplot(nz, aes(long, lat, group = group)) +
+ggplot(est, aes(long, lat, group = group)) +
   geom_polygon(fill = "white", colour = "black") +
   coord_quickmap()
 ```
+
+### Excercises
+
+1. What does labs() do? Read the documentation.
+
+2. What’s the difference between coord_quickmap() and coord_map()?
+
+## Grammar of graphics summary
+
+Constructing ggplot graphs can be reduced to the following template, at minimum you need data and one geom to produce a plot.
+```{r, eval=FALSE}
+ggplot(data = <DATA>) + 
+  <GEOM_FUNCTION>(
+     mapping = aes(<MAPPINGS>),
+     stat = <STAT>, 
+     position = <POSITION>
+  ) +
+  <COORDINATE_FUNCTION> +
+  <FACET_FUNCTION>
+```
+
+
 
 

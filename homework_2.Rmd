@@ -11,6 +11,19 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 
+- Recreate the R code necessary to generate the following graphs.
+```{r}
+knitr::include_graphics(glue::glue("plots/fig{1:6}.png"))
+```
+
 - Most geoms and stats come in pairs that are almost always used in concert. Read through the documentation and make a list of all the pairs. What do they have in common?
 
-3. Compare and contrast geom_jitter() with geom_count().
+- Compare and contrast geom_jitter() with geom_count().
+
+- What does the plot below tell you about the relationship between city and highway mpg (fuel consumption)? Why is coord_fixed() important? What does geom_abline() do?
+```{r}
+ggplot(data = mpg, mapping = aes(x = cty, y = hwy)) +
+  geom_point() + 
+  geom_abline() +
+  coord_fixed()
+```
