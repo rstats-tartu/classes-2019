@@ -17,14 +17,14 @@ library(datasauRus)
 library(tidyverse)
 ```
 
-    ## ── Attaching packages ───────────────────────────────────────────────────────────────── tidyverse 1.2.1 ──
+    ## ── Attaching packages ────────────────────────────────── tidyverse 1.2.1 ──
 
     ## ✔ ggplot2 2.2.1     ✔ purrr   0.2.4
     ## ✔ tibble  1.4.2     ✔ dplyr   0.7.4
     ## ✔ tidyr   0.8.0     ✔ stringr 1.3.0
     ## ✔ readr   1.1.1     ✔ forcats 0.3.0
 
-    ## ── Conflicts ──────────────────────────────────────────────────────────────────── tidyverse_conflicts() ──
+    ## ── Conflicts ───────────────────────────────────── tidyverse_conflicts() ──
     ## ✖ dplyr::filter() masks stats::filter()
     ## ✖ dplyr::lag()    masks stats::lag()
 
@@ -437,18 +437,6 @@ ggplot(data = mpg) +
 
 ![](01-visualization_files/figure-markdown_github/unnamed-chunk-27-2.png)
 
-1.  Take the first faceted plot in this section:
-
-``` r
-ggplot(data = mpg) + 
-  geom_point(mapping = aes(x = displ, y = hwy)) + 
-  facet_wrap(~ class, nrow = 2)
-```
-
-![](01-visualization_files/figure-markdown_github/unnamed-chunk-28-1.png)
-
-What are the advantages to using faceting instead of the colour aesthetic? What are the disadvantages? How might the balance change if you had a larger dataset?
-
 1.  Read ?facet\_wrap. What does nrow do? What does ncol do? What other options control the layout of the individual panels? Why doesn't facet\_grid() have nrow and ncol argument?
 
 2.  When using facet\_grid() you should usually put the variable with more unique levels in the columns. Why?
@@ -465,7 +453,7 @@ ggplot(data = mpg) +
   geom_point(mapping = aes(x = displ, y = hwy))
 ```
 
-![](01-visualization_files/figure-markdown_github/unnamed-chunk-29-1.png)
+![](01-visualization_files/figure-markdown_github/unnamed-chunk-28-1.png)
 
 To create line graph with loess smooth line fitted to these dots use geom\_smooth():
 
@@ -476,7 +464,7 @@ ggplot(data = mpg) +
 
     ## `geom_smooth()` using method = 'loess'
 
-![](01-visualization_files/figure-markdown_github/unnamed-chunk-30-1.png)
+![](01-visualization_files/figure-markdown_github/unnamed-chunk-29-1.png)
 
 Every geom function in ggplot2 takes a mapping argument.
 
@@ -494,7 +482,7 @@ ggplot(data = mpg) +
 
     ## `geom_smooth()` using method = 'loess'
 
-![](01-visualization_files/figure-markdown_github/unnamed-chunk-31-1.png)
+![](01-visualization_files/figure-markdown_github/unnamed-chunk-30-1.png)
 
 Here, 4 stands for four-wheel drive, f for front-wheel drive, and r for rear-wheel drive.
 
@@ -540,7 +528,7 @@ ggplot(data = mpg) +
 
     ## `geom_smooth()` using method = 'loess'
 
-![](01-visualization_files/figure-markdown_github/unnamed-chunk-33-1.png)
+![](01-visualization_files/figure-markdown_github/unnamed-chunk-32-1.png)
 
 Other aestheic mappings (color, alpha etc) similarily group your data for display but also add by default legend to the plot. To hide legend, set show.legend to FALSE:
 
@@ -554,7 +542,7 @@ ggplot(data = mpg) +
 
     ## `geom_smooth()` using method = 'loess'
 
-![](01-visualization_files/figure-markdown_github/unnamed-chunk-34-1.png)
+![](01-visualization_files/figure-markdown_github/unnamed-chunk-33-1.png)
 
 To display multiple geoms in the same plot, add multiple geom functions to ggplot():
 
@@ -566,7 +554,7 @@ ggplot(data = mpg) +
 
     ## `geom_smooth()` using method = 'loess'
 
-![](01-visualization_files/figure-markdown_github/unnamed-chunk-35-1.png)
+![](01-visualization_files/figure-markdown_github/unnamed-chunk-34-1.png)
 
 Probably you notice, that if we go with aethetic mappings as we used to, by specifing them within geom function, we introduce some code duplication. This can be easily avoided by moving aes() part from geom\_ to the ggplot():
 
@@ -578,7 +566,7 @@ ggplot(data = mpg, mapping = aes(x = displ, y = hwy)) +
 
     ## `geom_smooth()` using method = 'loess'
 
-![](01-visualization_files/figure-markdown_github/unnamed-chunk-36-1.png)
+![](01-visualization_files/figure-markdown_github/unnamed-chunk-35-1.png)
 
 Now, ggplot2 uses this mapping globally in all geoms.
 
@@ -594,7 +582,7 @@ ggplot(data = mpg, mapping = aes(x = displ, y = hwy)) +
 
     ## `geom_smooth()` using method = 'loess'
 
-![](01-visualization_files/figure-markdown_github/unnamed-chunk-37-1.png)
+![](01-visualization_files/figure-markdown_github/unnamed-chunk-36-1.png)
 
 Importantly, you can use the same idea to specify different data for each layer:
 
@@ -606,7 +594,7 @@ ggplot(data = mpg, mapping = aes(x = displ, y = hwy)) +
 
     ## `geom_smooth()` using method = 'loess'
 
-![](01-visualization_files/figure-markdown_github/unnamed-chunk-38-1.png) Above, our smooth line displays just a subset of the mpg dataset, the subcompact cars. The local data argument in geom\_smooth() overrides the global data argument in ggplot() for that layer only.
+![](01-visualization_files/figure-markdown_github/unnamed-chunk-37-1.png) Above, our smooth line displays just a subset of the mpg dataset, the subcompact cars. The local data argument in geom\_smooth() overrides the global data argument in ggplot() for that layer only.
 
 Exercises
 ---------
@@ -623,7 +611,7 @@ ggplot(data = mpg, mapping = aes(x = displ, y = hwy, color = drv)) +
 
     ## `geom_smooth()` using method = 'loess'
 
-![](01-visualization_files/figure-markdown_github/unnamed-chunk-39-1.png)
+![](01-visualization_files/figure-markdown_github/unnamed-chunk-38-1.png)
 
 1.  What does show.legend = FALSE do? What happens if you remove it?
 
@@ -639,7 +627,7 @@ ggplot(data = mpg, mapping = aes(x = displ, y = hwy)) +
 
     ## `geom_smooth()` using method = 'loess'
 
-![](01-visualization_files/figure-markdown_github/unnamed-chunk-40-1.png)
+![](01-visualization_files/figure-markdown_github/unnamed-chunk-39-1.png)
 
 ``` r
 ggplot() + 
@@ -649,12 +637,301 @@ ggplot() +
 
     ## `geom_smooth()` using method = 'loess'
 
-![](01-visualization_files/figure-markdown_github/unnamed-chunk-40-2.png)
+![](01-visualization_files/figure-markdown_github/unnamed-chunk-39-2.png)
 
-1.  Recreate the R code necessary to generate the following graphs.
+Plotting statistical transformations - bar graph tricks
+-------------------------------------------------------
+
+Bar graphs are special among ggplot geoms. This is because by default they do some calculations with data before plotting. To get an idea, please have a look at the following bar graph, created by geom\_bar() function.
+
+The chart below displays the total number of diamonds in the **diamonds** dataset, grouped by cut.
 
 ``` r
-knitr::include_graphics(glue::glue("plots/fig{1:6}.png"))
+ggplot(data = diamonds) + 
+  geom_bar(mapping = aes(x = cut))
 ```
 
-![](plots/fig1.png)![](plots/fig2.png)![](plots/fig3.png)![](plots/fig4.png)![](plots/fig5.png)![](plots/fig6.png)
+![](01-visualization_files/figure-markdown_github/unnamed-chunk-40-1.png)
+
+Let's have a look at the diamonds dataset, containing the prices and other attributes of ~54000 diamonds.
+
+``` r
+diamonds
+```
+
+    ## # A tibble: 53,940 x 10
+    ##    carat cut       color clarity depth table price     x     y     z
+    ##    <dbl> <ord>     <ord> <ord>   <dbl> <dbl> <int> <dbl> <dbl> <dbl>
+    ##  1 0.230 Ideal     E     SI2      61.5   55.   326  3.95  3.98  2.43
+    ##  2 0.210 Premium   E     SI1      59.8   61.   326  3.89  3.84  2.31
+    ##  3 0.230 Good      E     VS1      56.9   65.   327  4.05  4.07  2.31
+    ##  4 0.290 Premium   I     VS2      62.4   58.   334  4.20  4.23  2.63
+    ##  5 0.310 Good      J     SI2      63.3   58.   335  4.34  4.35  2.75
+    ##  6 0.240 Very Good J     VVS2     62.8   57.   336  3.94  3.96  2.48
+    ##  7 0.240 Very Good I     VVS1     62.3   57.   336  3.95  3.98  2.47
+    ##  8 0.260 Very Good H     SI1      61.9   55.   337  4.07  4.11  2.53
+    ##  9 0.220 Fair      E     VS2      65.1   61.   337  3.87  3.78  2.49
+    ## 10 0.230 Very Good H     VS1      59.4   61.   338  4.00  4.05  2.39
+    ## # ... with 53,930 more rows
+
+Variable count is nowhere to be found... it's quite different from other plot types, like scatterplot, that plot raw values.
+
+Other graphs, like bar charts, calculate new values to plot:
+
+-   bar charts, histograms, and frequency polygons bin your data and then plot bin counts, the number of points that fall in each bin.
+
+-   smoothers fit a model to your data and then plot predictions from the model.
+
+-   boxplots compute a robust summary of the distribution and then display a specially formatted box.
+
+The algorithm used to calculate new values for a graph is called a stat, short for statistical transformation.
+
+You can learn which stat a geom uses by inspecting the default value for the stat argument in geom\_ function.
+
+For example, ?geom\_bar shows that the default value for stat is "count".
+
+![geom\_bar](plots/stat_count.png)
+
+You can use geoms and stats interchangeably. For example, you can recreate the previous plot using stat\_count() instead of geom\_bar():
+
+``` r
+ggplot(data = diamonds) + 
+  stat_count(mapping = aes(x = cut))
+```
+
+![](01-visualization_files/figure-markdown_github/unnamed-chunk-42-1.png)
+
+This works because every geom has a default stat; and every stat has a default geom, meaning that you can use geoms without worrying about its underlying statistical transformation.
+
+There are three cases when you might want to specify stat explicitly:
+
+1.  You might want to override the default stat. For example you have alredy summarised counts or means or whatever, then you need to change the default stat in geom\_bar() to "identity": Let's create summarized dataset (don't worry about this code yet, we are going to this in the next classes):
+
+``` r
+diamonds_summarised <- diamonds %>% 
+  group_by(cut) %>% 
+  summarise(N = n())
+```
+
+Here we (re)create diamond counts plot using summary data. Note that here we need to use also y-aesthetic!
+
+``` r
+ggplot(data = diamonds_summarised) +
+  geom_bar(mapping = aes(x = cut, y = N), stat = "identity")
+```
+
+![](01-visualization_files/figure-markdown_github/unnamed-chunk-44-1.png)
+
+1.  You might want to override the default mapping from transformed variables to aesthetics. For example, you might want to display a bar chart of proportion, rather than count:
+
+``` r
+ggplot(data = diamonds) + 
+  geom_bar(mapping = aes(x = cut, y = ..prop.., group = 1))
+```
+
+![](01-visualization_files/figure-markdown_github/unnamed-chunk-45-1.png)
+
+To find the variables computed by the stat, look for the help section titled "computed variables".
+
+1.  You might want to draw greater attention to the statistical transformation in your code. Meaning basically, that you want to plot some summary statistics like median and min/max or mean +/- SE.
+
+Median and min/max:
+
+``` r
+ggplot(data = diamonds) + 
+  stat_summary(
+    mapping = aes(x = cut, y = depth),
+    fun.ymin = min,
+    fun.ymax = max,
+    fun.y = median
+  )
+```
+
+![](01-visualization_files/figure-markdown_github/unnamed-chunk-46-1.png)
+
+Mean and SE:
+
+``` r
+ggplot(data = diamonds) + 
+  stat_summary(
+    mapping = aes(x = cut, y = depth),
+    fun.data = mean_se
+  )
+```
+
+![](01-visualization_files/figure-markdown_github/unnamed-chunk-47-1.png)
+
+If you want to use mean +/- SD like this, you need mean\_sdl() function from Hmisc package (meaning, that you need to install Hmisc).
+
+### Exercises
+
+1.  What is the default geom associated with stat\_summary()? How could you rewrite the previous plot to use that geom function instead of the stat function?
+
+2.  What does geom\_col() do? How is it different to geom\_bar()?
+
+3.  What variables does stat\_smooth() compute? What parameters control its behaviour?
+
+4.  In our proportion bar chart, we need to set group = 1. Why? In other words what is the problem with these two graphs?
+
+``` r
+ggplot(data = diamonds) + 
+  geom_bar(mapping = aes(x = cut, y = ..prop..))
+```
+
+![](01-visualization_files/figure-markdown_github/unnamed-chunk-48-1.png)
+
+``` r
+ggplot(data = diamonds) + 
+  geom_bar(mapping = aes(x = cut, fill = color, y = ..prop..))
+```
+
+![](01-visualization_files/figure-markdown_github/unnamed-chunk-48-2.png)
+
+Position adjustments - how to get those bars side-by-side
+---------------------------------------------------------
+
+There is more you need to know about bar charts. You can easily update diamonds cut counts by mapping cut additonally either to color or fill (whereas fill seems to be more useful):
+
+``` r
+ggplot(data = diamonds) + 
+  stat_count(mapping = aes(x = cut, fill = cut))
+```
+
+![](01-visualization_files/figure-markdown_github/unnamed-chunk-49-1.png)
+
+But what happens when we map fill to another variable in diamonds data, like clarity:
+
+``` r
+ggplot(data = diamonds) + 
+  stat_count(mapping = aes(x = cut, fill = clarity))
+```
+
+![](01-visualization_files/figure-markdown_github/unnamed-chunk-50-1.png)
+
+Wow, bars are automatically **stacked** showing the proportions of different diamond clarity classes within cut quality classes.
+
+If you want to get these stacked bars side-by-side, you need to change the position adjustment argument, which is set to "stacked" by default. There are three other options: "identity", "dodge" and "fill".
+
+-   position = "identity" will place each object exactly where it falls in the context of the graph. Its generally not useful with bar graphs, as all bars are behind each other and this plot can be easily mixed up with position = "stacked":
+
+``` r
+ggplot(data = diamonds) + 
+  stat_count(mapping = aes(x = cut, fill = clarity), position = "identity")
+```
+
+![](01-visualization_files/figure-markdown_github/unnamed-chunk-51-1.png)
+
+Position "stacked" is naturally default in scatterplot.
+
+-   position = "fill" works like stacking, but makes each set of stacked bars the same height. This makes it easier to compare proportions across groups.
+
+``` r
+ggplot(data = diamonds) + 
+  geom_bar(mapping = aes(x = cut, fill = clarity), position = "fill")
+```
+
+![](01-visualization_files/figure-markdown_github/unnamed-chunk-52-1.png)
+
+-   position = "dodge" places overlapping objects directly beside one another. This makes it easier to compare individual values.
+
+``` r
+ggplot(data = diamonds) + 
+  geom_bar(mapping = aes(x = cut, fill = clarity), position = "dodge")
+```
+
+![](01-visualization_files/figure-markdown_github/unnamed-chunk-53-1.png)
+
+There is another position adjustment function for scatterplots that helps mitigate overplotting: position = "jitter":
+
+``` r
+ggplot(data = mpg) +
+  geom_point(mapping = aes(x = displ, y = hwy), position = "jitter")
+```
+
+![](01-visualization_files/figure-markdown_github/unnamed-chunk-54-1.png)
+
+"jitter" adds small amount of random noise to your raw data, so that each point gets moved away from its original position. This way you can reveal very similar data points that fall into same place in plot grid.
+
+To learn more about a position adjustment, look up the help page associated with each adjustment: ?position\_dodge, ?position\_fill, ?position\_identity, ?position\_jitter, and ?position\_stack.
+
+### Exercises
+
+1.  What is the problem with this plot? How could you improve it?
+
+``` r
+ggplot(data = mpg, mapping = aes(x = cty, y = hwy)) + 
+  geom_point()
+```
+
+![](01-visualization_files/figure-markdown_github/unnamed-chunk-55-1.png)
+
+1.  What parameters to geom\_jitter() control the amount of jittering?
+
+2.  What’s the default position adjustment for geom\_boxplot()? Create a visualisation of the mpg dataset that demonstrates it.
+
+Coordinate systems - flip your plot
+-----------------------------------
+
+The default coordinate system of ggplot2 is the Cartesian coordinate system where the x and y positions act independently to determine the location of each point.
+
+There are a number of other coordinate systems that are occasionally helpful.
+
+-   coord\_flip() witches the x and y axes. This is useful if you want horizontal boxplots. It's also very useful for long labels: it's hard to get them to fit without overlapping on the x-axis.
+
+``` r
+ggplot(data = mpg, mapping = aes(x = class, y = hwy)) + 
+  geom_boxplot() +
+  coord_flip()
+```
+
+![](01-visualization_files/figure-markdown_github/unnamed-chunk-56-1.png)
+
+Try to make this plot without flipping... x-axis labels are a mess!
+
+-   coord\_quickmap() sets the aspect ratio correctly for maps. This is very important if you’re plotting spatial data with ggplot2.
+
+``` r
+# install.packages("sp")
+# level 0 map data was downloaded from http://www.gadm.org/country
+est <- read_rds("data/EST_adm0.rds")
+ggplot(est, aes(long, lat, group = group)) +
+  geom_polygon(fill = "white", colour = "black")
+```
+
+    ## Loading required package: sp
+
+    ## Regions defined for each Polygons
+
+![](01-visualization_files/figure-markdown_github/unnamed-chunk-57-1.png)
+
+``` r
+ggplot(est, aes(long, lat, group = group)) +
+  geom_polygon(fill = "white", colour = "black") +
+  coord_quickmap()
+```
+
+    ## Regions defined for each Polygons
+
+![](01-visualization_files/figure-markdown_github/unnamed-chunk-57-2.png)
+
+### Excercises
+
+1.  What does labs() do? Read the documentation.
+
+2.  What’s the difference between coord\_quickmap() and coord\_map()?
+
+Grammar of graphics summary
+---------------------------
+
+Constructing ggplot graphs can be reduced to the following template, at minimum you need data and one geom to produce a plot.
+
+``` r
+ggplot(data = <DATA>) + 
+  <GEOM_FUNCTION>(
+     mapping = aes(<MAPPINGS>),
+     stat = <STAT>, 
+     position = <POSITION>
+  ) +
+  <COORDINATE_FUNCTION> +
+  <FACET_FUNCTION>
+```
