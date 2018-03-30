@@ -82,7 +82,7 @@ jan2005 <- filter(transactions, year == 2005, month == "Jan")
 ### Comparisons
 
 What is this == operator above? Why not use = to check equality:
-```{r}
+```{r, eval=FALSE}
 filter(transactions, year = 2005)
 ```
 
@@ -118,7 +118,7 @@ filter(transactions, month == "Nov" | month == "Dec")
 ```
 
 You can’t write filter(flights, month == "Nov" | "Dec") and in case of numeric months this will give you wrong answer instead of Error, so be careful:
-```{r}
+```{r, eval=FALSE}
 filter(transactions, month == "Nov" | "Dec")
 ```
 
