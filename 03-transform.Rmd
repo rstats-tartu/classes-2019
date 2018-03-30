@@ -1,0 +1,27 @@
+---
+title: "Data transformation using dplyr (aka five verbs)"
+author: "Taavi Päll"
+date: "01. April 2018"
+output: github_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+I our previous classes we have been working with small cleaned up dataset to go through steps of creating some of the most common visualization types. 
+In your workflow you are going to need data visualization at two points, namely during exploratory data analysis where you learn to know your dataset and during report preparation when you try to communicate what have you found. And this is not two stop trip, this is more like a roundabout, an iterative process, where you pass these two point multiple times after you have done some "tweaking" of your data. And by "tweaking" I here mean data transformation and/or modeling. In real life you rarely get a dataset that is in the right form for visualization and modeling. So often you will need to:
+
+- summarise your data or to 
+- create new variables, 
+- rename variables, or 
+- reorder the observations. 
+
+We are going to use dplyr library from tidyverse to learn how to carry out these tasks. 
+
+
+
+```{r}
+
+```
+
