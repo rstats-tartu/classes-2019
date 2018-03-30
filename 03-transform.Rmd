@@ -9,19 +9,145 @@ output: github_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
+## Introduction
 I our previous classes we have been working with small cleaned up dataset to go through steps of creating some of the most common visualization types. 
-In your workflow you are going to need data visualization at two points, namely during exploratory data analysis where you learn to know your dataset and during report preparation when you try to communicate what have you found. And this is not two stop trip, this is more like a roundabout, an iterative process, where you pass these two point multiple times after you have done some "tweaking" of your data. And by "tweaking" I here mean data transformation and/or modeling. In real life you rarely get a dataset that is in the right form for visualization and modeling. So often you will need to:
+
+In your workflow you are going to need data visualization at two points, namely during exploratory data analysis where you learn to know your dataset and during report preparation when you try to communicate what have you found. And this is not two stop trip, it's more like a roundabout, an iterative process, where you pass these two point multiple times after you have done some "tweaking" of your data. By "tweaking" I mean here data transformation and/or modeling. 
+
+You need to transform your data during analysis, because in real life you rarely start with a dataset that is in the right form for visualization and modeling. So, often you will need to:
 
 - summarise your data or to 
 - create new variables, 
 - rename variables, or 
 - reorder the observations. 
 
-We are going to use dplyr library from tidyverse to learn how to carry out these tasks. 
+We are going to use the dplyr library from tidyverse to learn how to carry out these tasks. 
+
+## Sources
+Again, we are going to follow closely R4DS book chapter "Data transformation" available from http://r4ds.had.co.nz/transform.html. More examples are available from https://rstats-tartu.github.io/lectures/tidyverse.html#dplyr-ja-selle-viis-verbi
+
+## Class III
+
+Load libraries and datasets:
+```{r}
+library(tidyverse)
+library(nycflights13)
+```
+
+However, instead of nycflights13 data we are going to use Estonian apartment transactions data. Transactions data contain monthly apartment sales data from January 2005 to January 2017 split up by counties and size of apartments. Price info is available when at least five transactions has been carried out.
+```{r}
+(transactions <- read_csv(file = "data/transactions.csv"))
+```
+
+## dplyr basics
+
+Most of the data transformation tasks can be carried out using five verbs from dplyr library:
+
+- Pick observations by their values (filter()).
+- Reorder the rows (arrange()).
+- Pick variables by their names (select()).
+- Create new variables with functions of existing variables (mutate()).
+- Collapse many values down to a single summary (summarise()).
+
+- These can all be used in conjunction with group_by() which changes the scope of each function from operating on the entire dataset to operating on it group-by-group. 
 
 
+These six functions provide the verbs for a language of data manipulation.
+
+All verbs work similarly:
+
+The first argument is a data frame.
+
+The subsequent arguments describe what to do with the data frame, using the variable names (without quotes).
+
+The result is a new data frame.
+
+Together these properties make it easy to chain together multiple simple steps to achieve a complex result. Let’s dive in and see how these verbs work.
+
+### Filter rows with filter()
+
+filter() allows you to subset observations based on their values. The first argument is the name of the data frame. The second and subsequent arguments are the expressions that filter the data frame. 
+
+For example, we can select data on January 2005 with:
+```{r}
+filter(transactions, year == 2005, month == "Jan")
+```
+
+dplyr runs the filtering operation and returns a new data frame. dplyr functions never modify their inputs, so if you want to save the result, you'll need to use the assignment operator, <-:
 
 ```{r}
-
+jan2005 <- filter(transactions, year == 2005, month == "Jan")
 ```
+
+### Comparisons
+
+What is this == operator above? Why not use = to check equality:
+```{r}
+filter(transactions, year = 2005)
+```
+
+It appears that = is another assignment operator besides ->
+
+There’s another common problem you might encounter when using ==: floating point numbers. Although, theoretically TRUE, following comparisons return FALSE!
+```{r}
+sqrt(2) ^ 2 == 2
+1/49 * 49 == 1
+```
+
+This is because computers and R use finite precision arithmetic and cannot store an infinite number of digits.
+
+This can be overcome by using near() function instead of ==:
+```{r}
+near(sqrt(2) ^ 2,  2)
+near(1 / 49 * 49, 1)
+```
+
+### Logical operators
+
+Multiple comparisons within filter() function are combined with comma "," which means "and" (&). In case of "and" all comparisons must evaluate to TRUE for observations to be returned.
+
+Together, logical (boolean) operators are:
+
+- & is AND, 
+- | is OR, 
+- ! is NOT
+
+The following code finds all transactions in November OR December:
+```{r}
+filter(transactions, month == "Nov" | month == "Dec")
+```
+
+You can’t write filter(flights, month == "Nov" | "Dec") and in case of numeric months this will give you wrong answer instead of Error, so be careful:
+```{r}
+filter(transactions, month == "Nov" | "Dec")
+```
+
+A useful short-hand for this problem is x %in% y. This will select every row where x is one of the values in y:
+
+```{r}
+(nov_dec <- filter(transactions, month %in% c("Nov", "Dec")))
+```
+
+Sometimes you can simplify complicated subsetting by remembering De Morgan’s law: !(x & y) is the same as !x | !y, and !(x | y) is the same as !x & !y. For example, if you wanted to find flights that weren’t delayed (on arrival or departure) by more than two hours, you could use either of the following two filters:
+```{r}
+filter(transactions, !(price_min > 1000 | price_max > 1000))
+filter(transactions,  price_min <= 1000, price_max <= 1000)
+```
+
+### Missing values
+
+One important feature of R that can make comparison tricky are missing values, or NAs ("not availables"). NA represents an unknown value so missing values are "contagious": almost any operation involving an unknown value will also be unknown.
+```{r}
+NA > 5
+10 == NA
+NA + 10
+NA / 2
+```
+
+As Rsudio already might suggest, if you want to determine if a value is missing, use is.na():
+```{r}
+x <- NA
+is.na(x)
+```
+
 

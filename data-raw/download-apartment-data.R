@@ -1,5 +1,5 @@
 
-# Download dataset from rstats-tartu/datasets repo 
+# Download dataset from rstats-tartu/datasets repo
 transactions <- read_csv(file = "https://raw.githubusercontent.com/rstats-tartu/datasets/master/transactions_residential_apartments.csv")
 
 # Save local copy as csv
