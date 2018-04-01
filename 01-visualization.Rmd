@@ -268,7 +268,7 @@ Here, we plot each class of cars on a separate subplot and we arrange plots into
 ```{r}
 ggplot(data = mpg) + 
   geom_point(mapping = aes(x = displ, y = hwy)) + 
-  facet_wrap(~ class, nrow = 2)
+  facet_wrap("class", nrow = 2)
 ```
 
 To plot combination of two variables, we use facet_grid():
@@ -287,8 +287,29 @@ ggplot(data = mpg) +
   facet_grid(. ~ cyl)
 ```
 
+
+```{r}
+ggplot(data = mpg) + 
+  geom_point(mapping = aes(x = displ, y = hwy)) + 
+  facet_grid(drv ~ cyl, scales = "free")
+```
+
+
+
 ## Exercises
 1. What happens if you facet on a continuous variable?
+
+```{r}
+mpg
+```
+
+
+```{r}
+ggplot(data = mpg) + 
+  geom_point(mapping = aes(x = displ, y = hwy)) + 
+  facet_wrap(~ displ)
+```
+Each raw value is contverted to categorical value and gets its own facet?
 
 2. What do the empty cells in plot with facet_grid(drv ~ cyl) mean? How do they relate to this plot?
 ```{r}
@@ -307,7 +328,8 @@ ggplot(data = mpg) +
   facet_grid(. ~ cyl)
 ```
 
-4. Read ?facet_wrap. What does nrow do? What does ncol do? What other options control the layout of the individual panels? Why doesn't facet_grid() have nrow and ncol argument?
+4. Read ?facet_wrap. What does nrow do? What does ncol do? What other options control the layout of the individual panels? Why doesn't facet_grid() have nrow and ncol argumentt.
+
 
 5. When using facet_grid() you should usually put the variable with more unique levels in the columns. Why?
 
@@ -482,6 +504,7 @@ Let's create summarized dataset (don't worry about this code yet, we are going t
 diamonds_summarised <- diamonds %>% 
   group_by(cut) %>% 
   summarise(N = n())
+diamonds_summarised
 ```
 
 Here we (re)create diamond counts plot using summary data. Note that here we need to use also y-aesthetic!
@@ -522,21 +545,9 @@ ggplot(data = diamonds) +
 
 If you want to use mean +/- SD like this, you need mean_sdl() function from Hmisc package (meaning, that you need to install Hmisc).
 
-### Exercises
+### Homework 2
 
-1. What is the default geom associated with stat_summary()? How could you rewrite the previous plot to use that geom function instead of the stat function?
 
-2. What does geom_col() do? How is it different to geom_bar()?
-
-3. What variables does stat_smooth() compute? What parameters control its behaviour?
-
-4. In our proportion bar chart, we need to set group = 1. Why? In other words what is the problem with these two graphs?
-```{r}
-ggplot(data = diamonds) + 
-  geom_bar(mapping = aes(x = cut, y = ..prop..))
-ggplot(data = diamonds) + 
-  geom_bar(mapping = aes(x = cut, fill = color, y = ..prop..))
-```
 
 ## Position adjustments - how to get those bars side-by-side
 
@@ -555,7 +566,7 @@ ggplot(data = diamonds) +
 
 Wow, bars are automatically __stacked__ showing the proportions of different diamond clarity classes within cut quality classes.
 
-If you want to get these stacked bars side-by-side, you need to change the position adjustment argument, which is set to "stacked" by default. There are three other options: "identity", "dodge" and "fill".
+If you want to get these stacked bars side-by-side, you need to change the __position adjustment__ argument, which is set to "stacked" by default. There are three other options: "identity", "dodge" and "fill".
 
 - position = "identity" will place each object exactly where it falls in the context of the graph. Its generally not useful with bar graphs, as all bars are behind each other and this plot can be easily mixed up with position = "stacked":
 ```{r}

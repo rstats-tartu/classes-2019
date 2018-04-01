@@ -17,14 +17,14 @@ library(datasauRus)
 library(tidyverse)
 ```
 
-    ## ── Attaching packages ────────────────────────────────── tidyverse 1.2.1 ──
+    ## ── Attaching packages ────────────────────────────────────── tidyverse 1.2.1 ──
 
     ## ✔ ggplot2 2.2.1     ✔ purrr   0.2.4
     ## ✔ tibble  1.4.2     ✔ dplyr   0.7.4
     ## ✔ tidyr   0.8.0     ✔ stringr 1.3.0
     ## ✔ readr   1.1.1     ✔ forcats 0.3.0
 
-    ## ── Conflicts ───────────────────────────────────── tidyverse_conflicts() ──
+    ## ── Conflicts ───────────────────────────────────────── tidyverse_conflicts() ──
     ## ✖ dplyr::filter() masks stats::filter()
     ## ✖ dplyr::lag()    masks stats::lag()
 
@@ -378,7 +378,7 @@ Here, we plot each class of cars on a separate subplot and we arrange plots into
 ``` r
 ggplot(data = mpg) + 
   geom_point(mapping = aes(x = displ, y = hwy)) + 
-  facet_wrap(~ class, nrow = 2)
+  facet_wrap("class", nrow = 2)
 ```
 
 ![](01-visualization_files/figure-markdown_github/unnamed-chunk-23-1.png)
@@ -405,19 +405,54 @@ ggplot(data = mpg) +
 
 ![](01-visualization_files/figure-markdown_github/unnamed-chunk-25-1.png)
 
+``` r
+ggplot(data = mpg) + 
+  geom_point(mapping = aes(x = displ, y = hwy)) + 
+  facet_grid(drv ~ cyl, scales = "free")
+```
+
+![](01-visualization_files/figure-markdown_github/unnamed-chunk-26-1.png)
+
 Exercises
 ---------
 
 1.  What happens if you facet on a continuous variable?
 
-2.  What do the empty cells in plot with facet\_grid(drv ~ cyl) mean? How do they relate to this plot?
+``` r
+mpg
+```
+
+    ## # A tibble: 234 x 11
+    ##    manufacturer model    displ  year   cyl trans   drv     cty   hwy fl   
+    ##    <chr>        <chr>    <dbl> <int> <int> <chr>   <chr> <int> <int> <chr>
+    ##  1 audi         a4        1.80  1999     4 auto(l… f        18    29 p    
+    ##  2 audi         a4        1.80  1999     4 manual… f        21    29 p    
+    ##  3 audi         a4        2.00  2008     4 manual… f        20    31 p    
+    ##  4 audi         a4        2.00  2008     4 auto(a… f        21    30 p    
+    ##  5 audi         a4        2.80  1999     6 auto(l… f        16    26 p    
+    ##  6 audi         a4        2.80  1999     6 manual… f        18    26 p    
+    ##  7 audi         a4        3.10  2008     6 auto(a… f        18    27 p    
+    ##  8 audi         a4 quat…  1.80  1999     4 manual… 4        18    26 p    
+    ##  9 audi         a4 quat…  1.80  1999     4 auto(l… 4        16    25 p    
+    ## 10 audi         a4 quat…  2.00  2008     4 manual… 4        20    28 p    
+    ## # ... with 224 more rows, and 1 more variable: class <chr>
+
+``` r
+ggplot(data = mpg) + 
+  geom_point(mapping = aes(x = displ, y = hwy)) + 
+  facet_wrap(~ displ)
+```
+
+![](01-visualization_files/figure-markdown_github/unnamed-chunk-28-1.png) Each raw value is contverted to categorical value and gets its own facet?
+
+1.  What do the empty cells in plot with facet\_grid(drv ~ cyl) mean? How do they relate to this plot?
 
 ``` r
 ggplot(data = mpg) + 
   geom_point(mapping = aes(x = drv, y = cyl))
 ```
 
-![](01-visualization_files/figure-markdown_github/unnamed-chunk-26-1.png)
+![](01-visualization_files/figure-markdown_github/unnamed-chunk-29-1.png)
 
 1.  What plots does the following code make? What does . do?
 
@@ -427,7 +462,7 @@ ggplot(data = mpg) +
   facet_grid(drv ~ .)
 ```
 
-![](01-visualization_files/figure-markdown_github/unnamed-chunk-27-1.png)
+![](01-visualization_files/figure-markdown_github/unnamed-chunk-30-1.png)
 
 ``` r
 ggplot(data = mpg) + 
@@ -435,9 +470,9 @@ ggplot(data = mpg) +
   facet_grid(. ~ cyl)
 ```
 
-![](01-visualization_files/figure-markdown_github/unnamed-chunk-27-2.png)
+![](01-visualization_files/figure-markdown_github/unnamed-chunk-30-2.png)
 
-1.  Read ?facet\_wrap. What does nrow do? What does ncol do? What other options control the layout of the individual panels? Why doesn't facet\_grid() have nrow and ncol argument?
+1.  Read ?facet\_wrap. What does nrow do? What does ncol do? What other options control the layout of the individual panels? Why doesn't facet\_grid() have nrow and ncol argumentt.
 
 2.  When using facet\_grid() you should usually put the variable with more unique levels in the columns. Why?
 
@@ -453,7 +488,7 @@ ggplot(data = mpg) +
   geom_point(mapping = aes(x = displ, y = hwy))
 ```
 
-![](01-visualization_files/figure-markdown_github/unnamed-chunk-28-1.png)
+![](01-visualization_files/figure-markdown_github/unnamed-chunk-31-1.png)
 
 To create line graph with loess smooth line fitted to these dots use geom\_smooth():
 
@@ -464,7 +499,7 @@ ggplot(data = mpg) +
 
     ## `geom_smooth()` using method = 'loess'
 
-![](01-visualization_files/figure-markdown_github/unnamed-chunk-29-1.png)
+![](01-visualization_files/figure-markdown_github/unnamed-chunk-32-1.png)
 
 Every geom function in ggplot2 takes a mapping argument.
 
@@ -482,7 +517,7 @@ ggplot(data = mpg) +
 
     ## `geom_smooth()` using method = 'loess'
 
-![](01-visualization_files/figure-markdown_github/unnamed-chunk-30-1.png)
+![](01-visualization_files/figure-markdown_github/unnamed-chunk-33-1.png)
 
 Here, 4 stands for four-wheel drive, f for front-wheel drive, and r for rear-wheel drive.
 
@@ -528,7 +563,7 @@ ggplot(data = mpg) +
 
     ## `geom_smooth()` using method = 'loess'
 
-![](01-visualization_files/figure-markdown_github/unnamed-chunk-32-1.png)
+![](01-visualization_files/figure-markdown_github/unnamed-chunk-35-1.png)
 
 Other aestheic mappings (color, alpha etc) similarily group your data for display but also add by default legend to the plot. To hide legend, set show.legend to FALSE:
 
@@ -542,7 +577,7 @@ ggplot(data = mpg) +
 
     ## `geom_smooth()` using method = 'loess'
 
-![](01-visualization_files/figure-markdown_github/unnamed-chunk-33-1.png)
+![](01-visualization_files/figure-markdown_github/unnamed-chunk-36-1.png)
 
 To display multiple geoms in the same plot, add multiple geom functions to ggplot():
 
@@ -554,7 +589,7 @@ ggplot(data = mpg) +
 
     ## `geom_smooth()` using method = 'loess'
 
-![](01-visualization_files/figure-markdown_github/unnamed-chunk-34-1.png)
+![](01-visualization_files/figure-markdown_github/unnamed-chunk-37-1.png)
 
 Probably you notice, that if we go with aethetic mappings as we used to, by specifing them within geom function, we introduce some code duplication. This can be easily avoided by moving aes() part from geom\_ to the ggplot():
 
@@ -566,7 +601,7 @@ ggplot(data = mpg, mapping = aes(x = displ, y = hwy)) +
 
     ## `geom_smooth()` using method = 'loess'
 
-![](01-visualization_files/figure-markdown_github/unnamed-chunk-35-1.png)
+![](01-visualization_files/figure-markdown_github/unnamed-chunk-38-1.png)
 
 Now, ggplot2 uses this mapping globally in all geoms.
 
@@ -582,7 +617,7 @@ ggplot(data = mpg, mapping = aes(x = displ, y = hwy)) +
 
     ## `geom_smooth()` using method = 'loess'
 
-![](01-visualization_files/figure-markdown_github/unnamed-chunk-36-1.png)
+![](01-visualization_files/figure-markdown_github/unnamed-chunk-39-1.png)
 
 Importantly, you can use the same idea to specify different data for each layer:
 
@@ -594,7 +629,7 @@ ggplot(data = mpg, mapping = aes(x = displ, y = hwy)) +
 
     ## `geom_smooth()` using method = 'loess'
 
-![](01-visualization_files/figure-markdown_github/unnamed-chunk-37-1.png) Above, our smooth line displays just a subset of the mpg dataset, the subcompact cars. The local data argument in geom\_smooth() overrides the global data argument in ggplot() for that layer only.
+![](01-visualization_files/figure-markdown_github/unnamed-chunk-40-1.png) Above, our smooth line displays just a subset of the mpg dataset, the subcompact cars. The local data argument in geom\_smooth() overrides the global data argument in ggplot() for that layer only.
 
 Exercises
 ---------
@@ -611,7 +646,7 @@ ggplot(data = mpg, mapping = aes(x = displ, y = hwy, color = drv)) +
 
     ## `geom_smooth()` using method = 'loess'
 
-![](01-visualization_files/figure-markdown_github/unnamed-chunk-38-1.png)
+![](01-visualization_files/figure-markdown_github/unnamed-chunk-41-1.png)
 
 1.  What does show.legend = FALSE do? What happens if you remove it?
 
@@ -627,7 +662,7 @@ ggplot(data = mpg, mapping = aes(x = displ, y = hwy)) +
 
     ## `geom_smooth()` using method = 'loess'
 
-![](01-visualization_files/figure-markdown_github/unnamed-chunk-39-1.png)
+![](01-visualization_files/figure-markdown_github/unnamed-chunk-42-1.png)
 
 ``` r
 ggplot() + 
@@ -637,7 +672,7 @@ ggplot() +
 
     ## `geom_smooth()` using method = 'loess'
 
-![](01-visualization_files/figure-markdown_github/unnamed-chunk-39-2.png)
+![](01-visualization_files/figure-markdown_github/unnamed-chunk-42-2.png)
 
 Plotting statistical transformations - bar graph tricks
 -------------------------------------------------------
@@ -651,7 +686,7 @@ ggplot(data = diamonds) +
   geom_bar(mapping = aes(x = cut))
 ```
 
-![](01-visualization_files/figure-markdown_github/unnamed-chunk-40-1.png)
+![](01-visualization_files/figure-markdown_github/unnamed-chunk-43-1.png)
 
 Let's have a look at the diamonds dataset, containing the prices and other attributes of ~54000 diamonds.
 
@@ -699,7 +734,7 @@ ggplot(data = diamonds) +
   stat_count(mapping = aes(x = cut))
 ```
 
-![](01-visualization_files/figure-markdown_github/unnamed-chunk-42-1.png)
+![](01-visualization_files/figure-markdown_github/unnamed-chunk-45-1.png)
 
 This works because every geom has a default stat; and every stat has a default geom, meaning that you can use geoms without worrying about its underlying statistical transformation.
 
@@ -711,7 +746,17 @@ There are three cases when you might want to specify stat explicitly:
 diamonds_summarised <- diamonds %>% 
   group_by(cut) %>% 
   summarise(N = n())
+diamonds_summarised
 ```
+
+    ## # A tibble: 5 x 2
+    ##   cut           N
+    ##   <ord>     <int>
+    ## 1 Fair       1610
+    ## 2 Good       4906
+    ## 3 Very Good 12082
+    ## 4 Premium   13791
+    ## 5 Ideal     21551
 
 Here we (re)create diamond counts plot using summary data. Note that here we need to use also y-aesthetic!
 
@@ -720,7 +765,7 @@ ggplot(data = diamonds_summarised) +
   geom_bar(mapping = aes(x = cut, y = N), stat = "identity")
 ```
 
-![](01-visualization_files/figure-markdown_github/unnamed-chunk-44-1.png)
+![](01-visualization_files/figure-markdown_github/unnamed-chunk-47-1.png)
 
 1.  You might want to override the default mapping from transformed variables to aesthetics. For example, you might want to display a bar chart of proportion, rather than count:
 
@@ -729,7 +774,7 @@ ggplot(data = diamonds) +
   geom_bar(mapping = aes(x = cut, y = ..prop.., group = 1))
 ```
 
-![](01-visualization_files/figure-markdown_github/unnamed-chunk-45-1.png)
+![](01-visualization_files/figure-markdown_github/unnamed-chunk-48-1.png)
 
 To find the variables computed by the stat, look for the help section titled "computed variables".
 
@@ -747,7 +792,7 @@ ggplot(data = diamonds) +
   )
 ```
 
-![](01-visualization_files/figure-markdown_github/unnamed-chunk-46-1.png)
+![](01-visualization_files/figure-markdown_github/unnamed-chunk-49-1.png)
 
 Mean and SE:
 
@@ -759,33 +804,11 @@ ggplot(data = diamonds) +
   )
 ```
 
-![](01-visualization_files/figure-markdown_github/unnamed-chunk-47-1.png)
+![](01-visualization_files/figure-markdown_github/unnamed-chunk-50-1.png)
 
 If you want to use mean +/- SD like this, you need mean\_sdl() function from Hmisc package (meaning, that you need to install Hmisc).
 
-### Exercises
-
-1.  What is the default geom associated with stat\_summary()? How could you rewrite the previous plot to use that geom function instead of the stat function?
-
-2.  What does geom\_col() do? How is it different to geom\_bar()?
-
-3.  What variables does stat\_smooth() compute? What parameters control its behaviour?
-
-4.  In our proportion bar chart, we need to set group = 1. Why? In other words what is the problem with these two graphs?
-
-``` r
-ggplot(data = diamonds) + 
-  geom_bar(mapping = aes(x = cut, y = ..prop..))
-```
-
-![](01-visualization_files/figure-markdown_github/unnamed-chunk-48-1.png)
-
-``` r
-ggplot(data = diamonds) + 
-  geom_bar(mapping = aes(x = cut, fill = color, y = ..prop..))
-```
-
-![](01-visualization_files/figure-markdown_github/unnamed-chunk-48-2.png)
+### Homework 2
 
 Position adjustments - how to get those bars side-by-side
 ---------------------------------------------------------
@@ -797,7 +820,7 @@ ggplot(data = diamonds) +
   stat_count(mapping = aes(x = cut, fill = cut))
 ```
 
-![](01-visualization_files/figure-markdown_github/unnamed-chunk-49-1.png)
+![](01-visualization_files/figure-markdown_github/unnamed-chunk-51-1.png)
 
 But what happens when we map fill to another variable in diamonds data, like clarity:
 
@@ -806,11 +829,11 @@ ggplot(data = diamonds) +
   stat_count(mapping = aes(x = cut, fill = clarity))
 ```
 
-![](01-visualization_files/figure-markdown_github/unnamed-chunk-50-1.png)
+![](01-visualization_files/figure-markdown_github/unnamed-chunk-52-1.png)
 
 Wow, bars are automatically **stacked** showing the proportions of different diamond clarity classes within cut quality classes.
 
-If you want to get these stacked bars side-by-side, you need to change the position adjustment argument, which is set to "stacked" by default. There are three other options: "identity", "dodge" and "fill".
+If you want to get these stacked bars side-by-side, you need to change the **position adjustment** argument, which is set to "stacked" by default. There are three other options: "identity", "dodge" and "fill".
 
 -   position = "identity" will place each object exactly where it falls in the context of the graph. Its generally not useful with bar graphs, as all bars are behind each other and this plot can be easily mixed up with position = "stacked":
 
@@ -819,7 +842,7 @@ ggplot(data = diamonds) +
   stat_count(mapping = aes(x = cut, fill = clarity), position = "identity")
 ```
 
-![](01-visualization_files/figure-markdown_github/unnamed-chunk-51-1.png)
+![](01-visualization_files/figure-markdown_github/unnamed-chunk-53-1.png)
 
 Position "stacked" is naturally default in scatterplot.
 
@@ -830,7 +853,7 @@ ggplot(data = diamonds) +
   geom_bar(mapping = aes(x = cut, fill = clarity), position = "fill")
 ```
 
-![](01-visualization_files/figure-markdown_github/unnamed-chunk-52-1.png)
+![](01-visualization_files/figure-markdown_github/unnamed-chunk-54-1.png)
 
 -   position = "dodge" places overlapping objects directly beside one another. This makes it easier to compare individual values.
 
@@ -839,7 +862,7 @@ ggplot(data = diamonds) +
   geom_bar(mapping = aes(x = cut, fill = clarity), position = "dodge")
 ```
 
-![](01-visualization_files/figure-markdown_github/unnamed-chunk-53-1.png)
+![](01-visualization_files/figure-markdown_github/unnamed-chunk-55-1.png)
 
 There is another position adjustment function for scatterplots that helps mitigate overplotting: position = "jitter":
 
@@ -848,7 +871,7 @@ ggplot(data = mpg) +
   geom_point(mapping = aes(x = displ, y = hwy), position = "jitter")
 ```
 
-![](01-visualization_files/figure-markdown_github/unnamed-chunk-54-1.png)
+![](01-visualization_files/figure-markdown_github/unnamed-chunk-56-1.png)
 
 "jitter" adds small amount of random noise to your raw data, so that each point gets moved away from its original position. This way you can reveal very similar data points that fall into same place in plot grid.
 
@@ -863,7 +886,7 @@ ggplot(data = mpg, mapping = aes(x = cty, y = hwy)) +
   geom_point()
 ```
 
-![](01-visualization_files/figure-markdown_github/unnamed-chunk-55-1.png)
+![](01-visualization_files/figure-markdown_github/unnamed-chunk-57-1.png)
 
 1.  What parameters to geom\_jitter() control the amount of jittering?
 
@@ -884,7 +907,7 @@ ggplot(data = mpg, mapping = aes(x = class, y = hwy)) +
   coord_flip()
 ```
 
-![](01-visualization_files/figure-markdown_github/unnamed-chunk-56-1.png)
+![](01-visualization_files/figure-markdown_github/unnamed-chunk-58-1.png)
 
 Try to make this plot without flipping... x-axis labels are a mess!
 
@@ -902,7 +925,7 @@ ggplot(est, aes(long, lat, group = group)) +
 
     ## Regions defined for each Polygons
 
-![](01-visualization_files/figure-markdown_github/unnamed-chunk-57-1.png)
+![](01-visualization_files/figure-markdown_github/unnamed-chunk-59-1.png)
 
 ``` r
 ggplot(est, aes(long, lat, group = group)) +
@@ -912,7 +935,7 @@ ggplot(est, aes(long, lat, group = group)) +
 
     ## Regions defined for each Polygons
 
-![](01-visualization_files/figure-markdown_github/unnamed-chunk-57-2.png)
+![](01-visualization_files/figure-markdown_github/unnamed-chunk-59-2.png)
 
 ### Excercises
 
