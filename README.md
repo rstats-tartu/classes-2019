@@ -15,7 +15,7 @@ You need to transform your data during analysis, because in real life you rarely
 We are going to use the dplyr library from tidyverse to learn how to carry out these tasks. 
 
 ## Sources
-Again, we are going to follow closely R4DS book chapter "Data transformation" available from http://r4ds.had.co.nz/transform.html. More examples are available from https://rstats-tartu.github.io/lectures/tidyverse.html#dplyr-ja-selle-viis-verbi
+Again, we are follow closely R4DS book, chapter "Data transformation", available from http://r4ds.had.co.nz/transform.html. More examples from https://rstats-tartu.github.io/lectures/tidyverse.html#dplyr-ja-selle-viis-verbi
 
 ## Datasets
 
