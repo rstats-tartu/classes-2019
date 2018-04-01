@@ -15,7 +15,7 @@ library(tidyverse)
 ```
 
 
-1. Take the first faceted plot in this section:
+1) Take the first faceted plot in this section:
 ```{r}
 ggplot(data = mpg) + 
   geom_point(mapping = aes(x = displ, y = hwy)) + 
@@ -24,16 +24,16 @@ ggplot(data = mpg) +
 
 What are the advantages to using faceting instead of the colour aesthetic? What are the disadvantages? How might the balance change if you had a larger dataset?
 
-2. Recreate the R code necessary to generate the following graphs.
-```{r, out.width='.18\\linewidth'}
+2) Recreate the R code necessary to generate the following graphs.
+```{r, out.width=200}
 knitr::include_graphics(glue::glue("plots/fig{1:6}.png"))
 ```
 
-3. Most geoms and stats come in pairs that are almost always used in concert. Read through the documentation and make a list of all the pairs. What do they have in common?
+3) Most geoms and stats come in pairs that are almost always used in concert. Read through the documentation and make a list of all the pairs. What do they have in common?
 
-4. Compare and contrast geom_jitter() with geom_count().
+4) Compare and contrast geom_jitter() with geom_count().
 
-5. What does the plot below tell you about the relationship between city and highway mpg (fuel consumption)? Why is coord_fixed() important? What does geom_abline() do?
+5) What does the plot below tell you about the relationship between city and highway mpg (fuel consumption)? Why is coord_fixed() important? What does geom_abline() do?
 ```{r}
 ggplot(data = mpg, mapping = aes(x = cty, y = hwy)) +
   geom_point() + 
@@ -41,7 +41,7 @@ ggplot(data = mpg, mapping = aes(x = cty, y = hwy)) +
   coord_fixed()
 ```
 
-6. What is the default geom associated with stat_summary()?
+6) What is the default geom associated with stat_summary()?
 
 ```{r}
 ggplot(data = diamonds) + 
@@ -55,11 +55,11 @@ ggplot(data = diamonds) +
  How could you rewrite the previous plot to use that geom function instead of the stat function?
  
  
-7. What does geom_col() do? How is it different to geom_bar()?
+7) What does geom_col() do? How is it different to geom_bar()?
 
-8. What variables does stat_smooth() compute? What parameters control its behaviour?
+8) What variables does stat_smooth() compute? What parameters control its behaviour?
 
-9. In our proportion bar chart, we need to set group = 1. Why? In other words what is the problem with these two graphs?
+9) In our proportion bar chart, we need to set group = 1. Why? In other words what is the problem with these two graphs?
 ```{r}
 ggplot(data = diamonds) + 
   geom_bar(mapping = aes(x = cut, y = ..prop..))

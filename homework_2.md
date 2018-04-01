@@ -36,7 +36,7 @@ What are the advantages to using faceting instead of the colour aesthetic? What 
 knitr::include_graphics(glue::glue("plots/fig{1:6}.png"))
 ```
 
-<img src="plots/fig1.png" width=".18\linewidth" /><img src="plots/fig2.png" width=".18\linewidth" /><img src="plots/fig3.png" width=".18\linewidth" /><img src="plots/fig4.png" width=".18\linewidth" /><img src="plots/fig5.png" width=".18\linewidth" /><img src="plots/fig6.png" width=".18\linewidth" />
+<img src="plots/fig1.png" width="200" /><img src="plots/fig2.png" width="200" /><img src="plots/fig3.png" width="200" /><img src="plots/fig4.png" width="200" /><img src="plots/fig5.png" width="200" /><img src="plots/fig6.png" width="200" />
 
 1.  Most geoms and stats come in pairs that are almost always used in concert. Read through the documentation and make a list of all the pairs. What do they have in common?
 
