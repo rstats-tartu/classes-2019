@@ -20,7 +20,7 @@ Again, we are going to follow closely R4DS book chapter "Data transformation" av
 ## Datasets
 
 ### transactions - Transactions of residential apartments
-The source of this dataset is Estonian Land Board transactions database: http://www.maaamet.ee/kinnisvara/htraru/FilterUI.aspx. Dataset was downloaded and processed using 'R/maaamet.R' script.
+The source of this dataset is Estonian Land Board transactions database: http://www.maaamet.ee/kinnisvara/htraru/FilterUI.aspx. Dataset was downloaded and processed using 'R/maaamet.R' script. 
 
 Load this file to your project from data folder:
 ```

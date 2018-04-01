@@ -1,7 +1,7 @@
 ---
 title: "Data transformation using dplyr (aka five verbs)"
 author: "Taavi Päll"
-date: "01. April 2018"
+date: "02. April 2018"
 output: github_document
 ---
 
@@ -64,19 +64,19 @@ The result is a new data frame.
 
 Together these properties make it easy to chain together multiple simple steps to achieve a complex result. Let’s dive in and see how these verbs work.
 
-### Filter rows with filter()
+## Filter rows with filter()
 
 filter() allows you to subset observations based on their values. The first argument is the name of the data frame. The second and subsequent arguments are the expressions that filter the data frame. 
 
 For example, we can select data on January 2005 with:
 ```{r}
-filter(transactions, year == 2005, month == "Jan")
+filter(transactions, year == 2005, month == 1)
 ```
 
 dplyr runs the filtering operation and returns a new data frame. dplyr functions never modify their inputs, so if you want to save the result, you'll need to use the assignment operator, <-:
 
 ```{r}
-jan2005 <- filter(transactions, year == 2005, month == "Jan")
+jan2005 <- filter(transactions, year == 2005, month == 1)
 ```
 
 ### Comparisons
@@ -114,18 +114,18 @@ Together, logical (boolean) operators are:
 
 The following code finds all transactions in November OR December:
 ```{r}
-filter(transactions, month == "Nov" | month == "Dec")
+filter(transactions, month == 11 | month == 12)
 ```
 
 You can’t write filter(flights, month == "Nov" | "Dec") and in case of numeric months this will give you wrong answer instead of Error, so be careful:
 ```{r, eval=FALSE}
-filter(transactions, month == "Nov" | "Dec")
+filter(transactions, month == 11 | 12)
 ```
 
 A useful short-hand for this problem is x %in% y. This will select every row where x is one of the values in y:
 
 ```{r}
-(nov_dec <- filter(transactions, month %in% c("Nov", "Dec")))
+(nov_dec <- filter(transactions, month %in% c(11, 12)))
 ```
 
 Sometimes you can simplify complicated subsetting by remembering De Morgan’s law: !(x & y) is the same as !x | !y, and !(x | y) is the same as !x & !y. For example, if you wanted to find flights that weren’t delayed (on arrival or departure) by more than two hours, you could use either of the following two filters:
@@ -149,5 +149,144 @@ As Rsudio already might suggest, if you want to determine if a value is missing,
 x <- NA
 is.na(x)
 ```
+
+Let's use is.na() within filter to remove rows with missing price info:
+```{r}
+filter(transactions, is.na(price_total))
+```
+
+Ok. Now we got all rows with missing price_total... how would you change this code to really exclude these rows with missing data:
+```{r}
+
+```
+
+There is another function that works with data frames to find rows with complete set of observations - complete.cases():
+```{r}
+filter(transactions, complete.cases(transactions))
+```
+
+### Exercises
+
+1. Find all transactions that
+
+- Had an area_mean more than one hundred square meters
+- Took place in Saare maakond
+- Were done during summer (July, August, and September)
+- Another useful dplyr filtering helper is between(). What does it do?
+
+2. How many rows have a missing total_price? What other variables are missing?
+
+3. Why is NA ^ 0 not missing? Why is NA | TRUE not missing? Why is FALSE & NA not missing? Can you figure out the general rule? (NA * 0 is a tricky counterexample!)
+```{r}
+NA ^ 0
+NA | TRUE
+```
+
+## Arrange rows with arrange()
+arrange() works similarly to filter() except that instead of selecting rows, it changes their order.
+It takes a data frame and a set of column names to order by. If you provide more than one column name, each additional column will be used to break ties in the values of preceding columns:
+```{r}
+arrange(transactions, price_unit_area_max)
+```
+
+Use desc() to re-order by a column in descending order:
+```{r}
+arrange(transactions, desc(price_unit_area_max))
+```
+
+Missing values are always sorted at the end, even with desc() function:
+```{r}
+df <- tibble(x = c(5, 2, NA))
+arrange(df, x)
+```
+
+```{r}
+arrange(df, desc(x))
+```
+
+### Exercises
+
+1. How could you use arrange() to sort all missing values to the start? (Hint: use is.na()).
+
+2. Sort transactions to find the busiest months in each county.
+
+3. Sort transactions to find the months with highest mean price payed for price_unit_area_mean.
+
+4. Which apartements (size) sold the best in 2017? Which sold worst in 2017?
+
+## Select columns with select()
+select() allows you to rapidly zoom in on a useful subset of columns using operations based on the names of the variables.
+
+Select three columns:
+```{r}
+select(transactions, year, month, transactions)
+```
+
+Select columns from year to transactions:
+```{r}
+select(transactions, year:transactions)
+```
+
+Exlude columns from area_total to title:
+```{r}
+select(transactions, -(area_total:title))
+```
+
+There are a number of __helper functions you can use within select()__:
+
+- starts_with("abc"): matches names that begin with "abc".
+
+- ends_with("xyz"): matches names that end with "xyz".
+
+- contains("ijk"): matches names that contain "ijk".
+
+- matches("(.)\\1"): selects variables that match a regular expression. This one matches any variables that contain repeated characters. You’ll learn more about regular expressions in strings.
+
+- num_range("V", 1:3) matches V1, V2 and V3.
+
+- everything() is useful if you have a handful of variables you'd like to move to the start of the data frame.
+
+See ?select for more details.
+
+Move column "title" to the start of the data frame.
+```{r}
+select(transactions, title, everything())
+```
+
+### Exercises
+
+1. What happens if you include the name of a variable multiple times in a select() call?
+
+2. What does the one_of() function do? Why might it be helpful in conjunction with this vector?
+```{r}
+vars <- c("year", "month", "day", "dep_delay", "arr_delay")
+```
+
+3. Does the result of running the following code surprise you? How do the select helpers deal with case by default? How can you change that default?
+```{r}
+select(transactions, contains("PRICE"))
+```
+
+## Add new variables with mutate()
+Mutate creates new variables/columns from existing variables/columns.
+
+Let's adjust median price per unit area by consumer index. First, select smaller subset of columns:
+```{r}
+(transactions_price <- select(transactions, 
+  year:transactions, 
+  ends_with("median"), 
+  consumer_index
+))
+```
+
+Consumer index is expressed as percent relative to 2005:
+```{r}
+mutate(transactions_price,
+  consumer_index = consumer_index / 100,
+  adj_price = price_unit_area_median * consumer_index
+)
+```
+
+
 
 
