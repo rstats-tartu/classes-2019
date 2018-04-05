@@ -31,7 +31,6 @@ Again, we are going to follow closely R4DS book chapter "Data transformation" av
 Load libraries and datasets:
 ```{r}
 library(tidyverse)
-library(nycflights13)
 ```
 
 However, instead of nycflights13 data we are going to use Estonian apartment transactions data. Transactions data contain monthly apartment sales data from January 2005 to January 2017 split up by counties and size of apartments. Price info is available when at least five transactions has been carried out.
@@ -88,7 +87,7 @@ filter(transactions, year = 2005)
 
 It appears that = is another assignment operator besides ->
 
-There’s another common problem you might encounter when using ==: floating point numbers. Although, theoretically TRUE, following comparisons return FALSE!
+There's another common problem you might encounter when using ==: floating point numbers. Although, theoretically TRUE, following comparisons return FALSE!
 ```{r}
 sqrt(2) ^ 2 == 2
 1/49 * 49 == 1
@@ -117,7 +116,7 @@ The following code finds all transactions in November OR December:
 filter(transactions, month == 11 | month == 12)
 ```
 
-You can’t write filter(flights, month == "Nov" | "Dec") and in case of numeric months this will give you wrong answer instead of Error, so be careful:
+You can’t write filter(flights, month == 11 | 12) and in case of numeric months this will give you wrong answer instead of Error, so be careful:
 ```{r, eval=FALSE}
 filter(transactions, month == 11 | 12)
 ```
@@ -128,7 +127,7 @@ A useful short-hand for this problem is x %in% y. This will select every row whe
 (nov_dec <- filter(transactions, month %in% c(11, 12)))
 ```
 
-Sometimes you can simplify complicated subsetting by remembering De Morgan’s law: !(x & y) is the same as !x | !y, and !(x | y) is the same as !x & !y. For example, if you wanted to find flights that weren’t delayed (on arrival or departure) by more than two hours, you could use either of the following two filters:
+Sometimes you can simplify complicated subsetting by remembering De Morgan's law: !(x & y) is the same as !x | !y, and !(x | y) is the same as !x & !y. For example, if you wanted to find flights that weren’t delayed (on arrival or departure) by more than two hours, you could use either of the following two filters:
 ```{r}
 filter(transactions, !(price_min > 1000 | price_max > 1000))
 filter(transactions,  price_min <= 1000, price_max <= 1000)
@@ -157,15 +156,16 @@ filter(transactions, is.na(price_total))
 
 Ok. Now we got all rows with missing price_total... how would you change this code to really exclude these rows with missing data:
 ```{r}
-
+!FALSE
+filter(transactions, !is.na(price_total))
 ```
 
 There is another function that works with data frames to find rows with complete set of observations - complete.cases():
 ```{r}
-filter(transactions, complete.cases(transactions))
+transactions %>% filter(complete.cases(.))
 ```
 
-### Exercises
+### Exercises - homework
 
 1. Find all transactions that
 
@@ -259,7 +259,7 @@ select(transactions, title, everything())
 
 2. What does the one_of() function do? Why might it be helpful in conjunction with this vector?
 ```{r}
-vars <- c("year", "month", "day", "dep_delay", "arr_delay")
+vars <- c("year", "month", "county", "area", "price_unit_area_mean", "consumer_index")
 ```
 
 3. Does the result of running the following code surprise you? How do the select helpers deal with case by default? How can you change that default?
