@@ -262,24 +262,59 @@ select(transactions, title, everything())
 vars <- c("year", "month", "county", "area", "price_unit_area_mean", "consumer_index")
 ```
 
-3. Does the result of running the following code surprise you? How do the select helpers deal with case by default? How can you change that default?
+3. Select from 'transactions' all variables that contain string 'PRICE' (note case!). 
+
+Does the result of running the following code surprise you? How do the select helpers deal with case by default? How can you change that default?
 ```{r}
-select(transactions, contains("PRICE"))
+
 ```
 
 ## Add new variables with mutate()
-Mutate creates new variables/columns from existing variables/columns.
+Mutate creates new variables (columns) from existing variables (columns). Mutate is used to do calculations columnwise.
 
-Let's adjust median price per unit area by consumer index. First, select smaller subset of columns:
+To start illustrating what mutate does, let's have a look at the changes of real estate prices in transactions data. 
+
+In Estonia, real estate market collapsed after 2008 economic crisis. In 2017, various sources started talking about the new bubble. Are we really near the bubble? We can start elucidating this by looking at the price dynamics.
+
+First, select smaller subset of columns: year to transactions, median price per unit area (ends with median) and consumer index.
 ```{r}
-(transactions_price <- select(transactions, 
-  year:transactions, 
-  ends_with("median"), 
-  consumer_index
-))
+med <- select(transactions, year:transactions, ends_with("median"), consumer_index)
+med
 ```
 
-Consumer index is expressed as percent relative to 2005:
+Let's make a quick plot using Harjumaa data. 
+
+Oh, but we want to have time on the x axis. Whereas we have year and month columns in our dataset and these are not in the format that is recognised as time...
+
+We need to convert year and month to time format in the form "2005 Jan" or something..
+
+We are going to use ymd() function from tidyverse lubridate library. ymd recognizes several types of year-month-day strings (like "2018-04-09", "2018 04 09", etc) and converts them to date class. We just have to add also place holder for day for this function to work. We would set day to 1, as first day of month.
+
+First, we construct date string with paste() and then convert this string to date:
+```{r}
+library(lubridate)
+med <- med %>% 
+  mutate(date_string = paste(year, month, 1),
+         date = ymd(date_string)) %>% 
+  select(date, date_string, everything())
+med
+```
+
+Let's plot price trend using median price per $m^2$ (price_unit_area_median) placing each county on separate facet: 
+```{r}
+med %>% 
+  ggplot() +
+  geom_line(mapping = aes(x = date, y = price_unit_area_median, colour = area)) +
+  facet_wrap(~ county)
+```
+
+You can check if x = time_string works in ggplot.
+
+We can see that in "Harju maakond" and "Tartu maakond" the nominal prices are reaching again the levels before the economic crisis. The question is, whether there is still some room to growth?
+
+We can try to answer this question by bringing in also the inflation that helps to understand the real prices. We can adjust prices for inflation by normalizing them with consumer index. Luckily our transactions dataset already contains consumer indices as percent relative to year 2005 (code creating this dataset is available in file "data-raw/download-apartment-data.R").
+
+Consumer index is expressed as percent relative to year 2005:
 ```{r}
 mutate(transactions_price,
   consumer_index = consumer_index / 100,
