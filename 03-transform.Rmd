@@ -290,7 +290,7 @@ We need to convert year and month to time format in the form "2005 Jan" or somet
 
 We are going to use ymd() function from tidyverse lubridate library. ymd recognizes several types of year-month-day strings (like "2018-04-09", "2018 04 09", etc) and converts them to date class. We just have to add also place holder for day for this function to work. We would set day to 1, as first day of month.
 
-First, we construct date string with paste() and then convert this string to date:
+First, we construct date string with paste() and then convert this string to date. Note that we can refer to columns that we've just created:
 ```{r}
 library(lubridate)
 med <- med %>% 
@@ -312,16 +312,214 @@ You can check if x = time_string works in ggplot.
 
 We can see that in "Harju maakond" and "Tartu maakond" the nominal prices are reaching again the levels before the economic crisis. The question is, whether there is still some room to growth?
 
-We can try to answer this question by bringing in also the inflation that helps to understand the real prices. We can adjust prices for inflation by normalizing them with consumer index. Luckily our transactions dataset already contains consumer indices as percent relative to year 2005 (code creating this dataset is available in file "data-raw/download-apartment-data.R").
+We can try to answer this question by bringing in also the inflation that helps to understand the real prices. We can adjust prices for inflation by normalizing them with consumer index. Luckily our transactions dataset already contains consumer indices as percent relative to year 2005 (code used to create this dataset is available in file "data-raw/download-apartment-data.R").
 
-Consumer index is expressed as percent relative to year 2005:
+Consumer index is expressed as percent relative to year 2005, first we need to convert to proportions and then we can calculate adjusted prices, like so:
 ```{r}
-mutate(transactions_price,
+med <- mutate(med,
   consumer_index = consumer_index / 100,
-  adj_price = price_unit_area_median * consumer_index
+  adj_price = price_unit_area_median / consumer_index
 )
+med
+```
+
+Plot out adjusted prices:
+```{r}
+med %>% 
+  ggplot() +
+  geom_line(mapping = aes(x = date, y = adj_price, colour = area)) +
+  facet_wrap(~ county)
+```
+
+As we can see, based on real values, there was still some potential for growth in 2017. But what's the glich at the very end of the lines? We try to find that out using arrange..
+
+```{r}
+
 ```
 
 
+You can keep only newly created variable by using transmute() function:
+```{r}
 
+```
+
+
+## Useful creation functions
+
+There are many functions for creating new variables that you can use with mutate(). 
+
+> The key property is that the function must be vectorised: it must take a vector of values as input, return a vector with the same number of values as output. 
+
+Some of the functions are familiar from base R class: 
+- Arithmetic operators: +, -, *, /, ^.
+
+Arithmetic operators are also useful in conjunction with the aggregate functions. For example, x / sum(x) calculates the proportion of a total, and y - mean(y) computes the difference from the mean.
+
+- Modular arithmetic: %/% (integer division) and %% (remainder, modulus), where x == y * (x %/% y) + (x %% y). Modular arithmetic is a handy tool because it allows you to break integers up into pieces. For example, in the tidyverse flights dataset, you can compute hour and minute from dep_time with:
+
+To demonstrate modulo and integer division (if you figure out meaningful use of these two operators in transactions, let me know), let's quickly introduce new dataset:
+```{r}
+library(nycflights13)
+flights
+```
+
+Here we are, modulo and integer arithmetic operators to wrangle data, note the use of transmute:
+```{r}
+transmute(flights,
+  dep_time,
+  hour = dep_time %/% 100,
+  minute = dep_time %% 100
+)
+```
+
+- Logs: log(), log2(), log10(). Note that log() converts to natural logarithm.
+
+To demonstrate logs in action, we can look at the prices. Seems that they are not normally distributed... and most of the values are concentrated at the left side.
+```{r}
+ggplot(data = transactions) +
+  geom_histogram(aes(price_max), bins = 30)
+```
+
+We can have better look at the distibution by using log transformaton.
+```{r}
+pricelog <- mutate(transactions, price_max = log10(price_max))
+ggplot(data = pricelog) +
+  geom_histogram(aes(price_max), bins = 30) +
+  xlab("Maximum price, log10")
+```
+
+
+- Offsets: lead() and lag() allow you to refer to leading or lagging values. This allows you to compute running differences (e.g. x - lag(x)) or find when values change (x != lag(x)).
+
+```{r}
+(x <- 1:10)
+lag(x)
+lead(x)
+```
+
+- Cumulative and rolling aggregates: R provides functions for running sums, products, mins and maxes: cumsum(), cumprod(), cummin(), cummax(); 
+and dplyr provides cummean() for cumulative means.
+
+```{r}
+cumsum(x)
+cummean(x)
+```
+
+- Ranking: there are a number of ranking functions, but you should start with min_rank(). It does the most usual type of ranking (e.g. 1st, 2nd, 2nd, 4th).
+
+```{r}
+y <- c(1, 2, 2, NA, 3, 4)
+min_rank(y)
+min_rank(desc(y))
+```
+
+There are also row_number(), dense_rank(), percent_rank(), cume_dist(), ntile():
+```{r}
+row_number(y)
+dense_rank(y)
+percent_rank(y)
+cume_dist(y)
+```
+
+### Exercises
+
+- Currently dep_time and sched_dep_time are convenient to look at, but hard to compute with because they're not really continuous numbers. Convert them to a more convenient representation of number of minutes since midnight.
+
+```{r}
+flights
+```
+
+
+- Compare air_time with arr_time - dep_time. What do you expect to see? What do you see? What do you need to do to fix it?
+```{r}
+flights
+```
+
+- Compare dep_time, sched_dep_time, and dep_delay. How would you expect those three numbers to be related?
+```{r}
+flights
+```
+
+- Find the 10 most delayed flights using a ranking function. How do you want to handle ties? Carefully read the documentation for min_rank().
+
+- What does 1:3 + 1:10 return? Why?
+```{r}
+
+```
+
+
+- What trigonometric functions does R provide?
+
+## Grouped summaries with summarise()
+
+The last key verb is summarise(). It collapses a data frame to a single row:
+```{r}
+summarise(transactions, mean_volume_per_month = mean(price_total, na.rm = TRUE))
+```
+
+summarise() is not terribly useful unless we pair it with group_by(). This changes the unit of analysis from the complete dataset to individual groups. 
+
+Then, when you use the dplyr verbs on a grouped data frame they'll be automatically applied "by group". 
+
+For example, if we applied exactly the same code to a data frame grouped by county, we get the average price volume of transactions per county:
+```{r}
+by_county <- group_by(transactions, county)
+summarise(by_county, mean_volume_per_month = mean(price_total, na.rm = TRUE))
+```
+
+> Together group_by() and summarise() provide one of the tools that you'll use most commonly when working with dplyr: grouped summaries. 
+
+## Combining multiple operations with the pipe
+
+Imagine that we want to explore the mean_volume_per_month per county for large apartments (area == "70-249,99"). Using what you know about dplyr, you might write code like this:
+
+```{r}
+by_county <- group_by(transactions, county, area)
+volume <- summarise(by_county, mean_volume_per_month = mean(price_total, na.rm = TRUE))
+(volume <- filter(volume, area == "70-249,99"))
+```
+
+```{r}
+ggplot(data = volume) +
+  geom_col(mapping = aes(x = county, y = mean_volume_per_month)) +
+  coord_flip() +
+  labs(title = "Volume of transactions per month\nwith 70-245 m2 apartments",
+       x = element_blank(),
+       y = "Total price per month, euros")
+```
+
+There are three steps to prepare this data:
+
+- Group ransactions by county and area.
+
+- Summarise to compute total volume.
+
+- Filter to include only large 70-245 m2 apartments.
+
+
+This code is a little frustrating to write because we have to give each intermediate data frame a name, even though we don't care about it. Naming things is hard, so this slows down our analysis.
+
+There's another way to tackle the same problem with the pipe, %>%:
+
+
+```{r}
+volume <- transactions %>% 
+  group_by(county, area) %>% 
+  summarise(mean_volume_per_month = mean(price_total, na.rm = TRUE)) %>% 
+  filter(area == "70-249,99")
+volume
+```
+
+
+This focuses on the transformations, not what's being transformed, which makes the code easier to read. You can read it as a series of imperative statements: group, then summarise, then filter. As suggested by this reading, a good way to pronounce %>% when reading code is "then".
+
+> Behind the scenes, x %>% f(y) turns into f(x, y), and x %>% f(y) %>% g(z) turns into g(f(x, y), z) and so on. You can use the pipe to rewrite multiple operations in a way that you can read left-to-right, top-to-bottom. 
+
+## Missing values
+What about this na.rm argument in summary function. What happens if we don't set it?
+```{r}
+
+```
+
+We get a lot of missing values! That's because aggregation functions obey the usual rule of missing values: if there’s any missing value in the input, the output will be a missing value. 
 
