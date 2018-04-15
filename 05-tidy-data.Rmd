@@ -237,6 +237,133 @@ This means for most real analyses, you'll need to do some tidying. The first ste
 
 Typically a dataset will only suffer from one of these problems; it'll only suffer from both if you're really unlucky! To fix these problems, you'll need the two most important functions in tidyr: gather() and spread().
 
+## Gathering
 
+A common problem is a dataset where some of the column names are not names of variables, but values of a variable. 
+
+```{r}
+(wage <- read_excel("data/keskmine_brutokuupalk.xls", skip = 4))
+colnames(wage)[1] <- "month"
+wage
+```
+Above table: the column names 2005 etc represent values of the year variable, and each row represents more than one observation, not one.
+
+To tidy a dataset like this, we need to gather those columns into a new pair of variables. To describe that operation we need three parameters:
+
+1. The set of columns that represent values, not variables. In this example, those are the columns starting from 2005.
+
+2. The name of the variable whose values form the column names. I call that the key, and here it is "Aasta" (Year).
+
+3. The name of the variable whose values are spread over the cells. I call that value, and here it's the average bruto wage (Palk).
+
+Together those parameters generate the call to gather():
+```{r}
+(wage_tidy <- wage %>% 
+  gather(starts_with("20"), key = "year", value = "wage"))
+```
+
+Note that "2005" to "2017" are non-syntactic names (because they don’t start with a letter) so we have to surround them in backticks.
+
+Let's merge wage data with average price per m^2 feom transactions data:
+```{r}
+(trans <- read_csv("data/transactions.csv"))
+```
+
+
+To combine the tidied versions of wages and transactions into a single tibble, we need to use dplyr::left_join()
+```{r}
+(price_permonth <- trans %>% 
+  group_by(year, month) %>% 
+  summarise(av_price = mean(price_unit_area_mean, na.rm = TRUE)))
+```
+
+We need to change months to integers:
+```{r}
+wage_tidy <- mutate(wage_tidy, month = case_when(
+  str_detect(month, "Jaan") ~ 1,
+  str_detect(month, "Veeb") ~ 2,
+  month == "Märts" ~ 3,
+  month == "Aprill" ~ 4,
+  month == "Mai" ~ 5,
+  month == "Juuni" ~ 6,
+  month == "Juuli" ~ 7,
+  month == "August" ~ 8,
+  month == "September" ~ 9,
+  month == "Oktoober" ~ 10,
+  month == "November" ~ 11,
+  month == "Detsember" ~ 12
+))
+```
+
+
+```{r}
+left_join(wage_tidy, price_permonth)
+```
+
+Not working! Why?
+
+Lets fix:
+```{r}
+wage_tidy <- mutate(wage_tidy, year = as.numeric(year))
+(salary_and_prices <- left_join(wage_tidy, price_permonth))
+```
+
+Is the relationship between real estate price and average wage linear?
+```{r}
+salary_and_prices %>% 
+  ggplot() +
+  geom_point(aes(x = wage, y = av_price, color = factor(year)))
+```
+
+## Spreading
+
+Spreading is the opposite of gathering. You use it when an observation is scattered across multiple rows. For example, take following table: an observation is a month in a year, but each observation is spread across two rows.
+
+```{r}
+(sp <- salary_and_prices %>% 
+  filter(year == 2017, between(month, 1, 3)) %>% 
+  gather(key, value, c("wage", "av_price")))
+```
+
+To tidy this up, we first analyse the representation in similar way to gather(). This time, however, we only need two parameters:
+
+1. The column that contains variable names, the key column.
+
+2. The column that contains values forms multiple variables, the value column.
+
+We need to place each key into separate column.
+```{r}
+spread(sp, key, value)
+```
+
+## Separating and uniting
+
+We have one column that contains two variables. To fix this problem, we'll need the separate() function. 
+
+Complement of separate() is unite(), which you use if a single variable is spread across multiple columns.
+
+### Separate
+```{r}
+(Rb <- select(rba, `Well ID_Time (hrs)`, contains("Rb")))
+```
+
+Here we have well id and parameter in the key column:
+```{r}
+(Rb_tidy <- gather(Rb, key, value, contains("Rb")))
+```
+
+We need to specify separator separating these two values:
+```{r}
+(Rb_separated <- separate(Rb_tidy, key, into = c("well", "parameter"), sep = "_"))
+```
+
+### Unite
+
+unite() is the inverse of separate(): it combines multiple columns into a single column. You’ll need it much less frequently than separate(), but it’s still a useful tool to have in your back pocket.
+
+```{r}
+salary_and_prices %>% 
+  unite(year_month, year, month, sep = "-")
+```
 
 
