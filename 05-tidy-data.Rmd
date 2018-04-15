@@ -1,0 +1,86 @@
+---
+title: "Data import and tidy data"
+date: "2018-04-16"
+output: github_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Data import
+
+Working with data provided by R packages is a great way to learn the tools of data science, __but at some point you want to stop learning and start working with your own data__. 
+Now you will learn how to read plain-text rectangular files into R.
+
+We will have a look at two packages that you will most likely need most in your everyday work: "readr" and "readxl", and as a bonus also fread from "data.table". 
+
+- "readr" package is part of the core tidyverse. readr work on text-based, delimited files.
+- "readxl" is also part of the tidyverse. readxl supports both the legacy .xls format and the modern xml-based .xlsx format. There are other R packages for working with excel files. But compared to the other existing packages (e.g. gdata, xlsx, xlsReadWrite) readxl has no external dependencies. Having no external dependencies is a great bonus, considering that Java-dependent packages tend to hit memory limit during importing of large files and you need to deal with it.
+- fread() function from data.table package displays (1) superior speed during import (importand when working with large files ~1G+) and (2) guesses delimiter which is important when you have many files from multiple sources with unknown or unexpected column delimiters.
+
+```{r}
+library(tidyverse)
+```
+
+Most of readr's functions are concerned with turning flat files into data frames:
+
+- read_csv() reads _comma_ delimited files, 
+- read_csv2() reads _semicolon_ separated files (common in countries where , is used as the decimal place), 
+- read_tsv() reads _tab_ delimited files, and 
+- read_delim() reads in files with _any delimiter_.
+
+The first argument to read_csv() is the most important: it's the path to the file to read.
+
+```{r}
+(index <- read_csv(file = "data/consumer_index.csv"))
+```
+
+When you run read_csv() it prints out a column specification that gives the name and type of each column. That's an important part of readr: http://r4ds.had.co.nz/data-import.html#parsing-a-file
+
+You can also supply an inline csv file. This is useful for experimenting with readr and for creating reproducible examples to share with others:
+```{r}
+read_csv("a,b,c
+1,2,3
+4,5,6")
+```
+
+Note that string used in the previous example is spread into three lines. You can insert line end/newline explicitly by using "\n" string (no need to leave spaces!): 
+```{r}
+read_csv(("a,b,c\n4,5,6\n1,2,3"))
+```
+
+In both cases read_csv() uses the first line of the data for the column names, which is a very common convention. There are two cases where you might want to tweak this behaviour:
+
+1. Sometimes there are a few lines of metadata at the top of the file. You can use skip = n to skip the first n lines; or use comment = "#" to drop all lines that start with (e.g.) #.
+
+```{r}
+read_csv("The first line of metadata
+  The second line of metadata
+  x,y,z
+  1,2,3", skip = 2)
+```
+
+```{r}
+read_csv("# A comment I want to skip
+  x,y,z
+  1,2,3", comment = "#")
+```
+
+Real-life example:
+```{r}
+(rba <- read_csv("data/ECIS_141022_MFT_2_RbA.csv"))
+```
+
+So what's the problem?
+```{r}
+problems(rba)
+```
+
+Now we really have to have a look at the file. So it seems that file header, first 21 colums contain various experimental metadata and [Data] start at line 24. Let's skip first 23 lines and we don't have a header then:
+```{r}
+(rba <- read_csv("data/ECIS_141022_MFT_2_RbA.csv", skip = 23, col_names = FALSE))
+```
+
+Ok, now we have a rectangular table with 318 rows and 481 columns.
+
