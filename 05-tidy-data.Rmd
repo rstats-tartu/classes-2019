@@ -220,3 +220,23 @@ There's a general advantage to picking one consistent way of storing data. If yo
 There's a specific advantage to placing variables in columns because it allows __R's vectorised nature__ to shine. As you learned in mutate and summary functions, most built-in R functions work with vectors of values. That makes transforming tidy data feel particularly natural.
 
 dplyr, ggplot2, and all the other packages in the tidyverse are designed to work with tidy data. 
+
+## Spreading and gathering
+
+The principles of tidy data seem so obvious that you might wonder if you will ever encounter a dataset that isn't tidy. Unfortunately, however, most data that you will encounter will be untidy. There are two main reasons:
+
+Most people aren't familiar with the principles of tidy data, and it's hard to derive them yourself unless you spend a lot of time working with data.
+
+Data is often organised to facilitate some use other than analysis. For example, data is often organised to make entry as easy as possible.
+
+This means for most real analyses, you'll need to do some tidying. The first step is always to figure out what the variables and observations are. Sometimes this is easy; other times you’ll need to consult with the people who originally generated the data. The second step is to resolve one of two common problems:
+
+- One variable might be spread across multiple columns.
+
+- One observation might be scattered across multiple rows.
+
+Typically a dataset will only suffer from one of these problems; it'll only suffer from both if you're really unlucky! To fix these problems, you'll need the two most important functions in tidyr: gather() and spread().
+
+
+
+
