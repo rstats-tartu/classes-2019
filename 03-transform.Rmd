@@ -333,6 +333,8 @@ Does the result of running the following code surprise you? How do the select he
 select(transactions, contains("PRICE", ignore.case = FALSE))
 ```
 
+# Class IV
+
 ## Add new variables with mutate()
 Mutate creates new variables (columns) from existing variables (columns). Mutate is used to do calculations columnwise.
 
@@ -645,6 +647,7 @@ transactions %>%
             N = n())
 ```
 
+# Class V
 
 ## Useful summary functions
 
@@ -820,7 +823,7 @@ year %>%
   mutate(prop_trans = n / sum(n))
 ```
 
-Wow, the number of transactions was highest in 2015...
+Wow, the number of transactions was highest in 2015... 
 
 
 
