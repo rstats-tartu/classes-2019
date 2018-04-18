@@ -6,4 +6,6 @@ wget https://www.stat.ee/public/valmistabelid/palk_ja_toojoukulu/Keskmine%20brut
 mv Keskmine\ brutokuupalk\,\ kuud.xls\?uuendatud\=1519884052 keskmine_brutokuupalk.xls
 
 # transactions
-https://raw.githubusercontent.com/rstats-tln/transform-data-with-dplyr/master/data/transactions.csv
+cd data
+wget https://raw.githubusercontent.com/rstats-tartu/datasets/master/transactions_residential_apartments.csv
+mv transactions_residential_apartments.csv transactions.csv

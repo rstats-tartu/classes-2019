@@ -51,7 +51,7 @@ read_csv("a,b,c
 
 Note that string used in the previous example is spread into three lines. You can insert line end/newline explicitly by using "\n" string (no need to leave spaces!): 
 ```{r}
-read_csv(("a,b,c\n4,5,6\n1,2,3"))
+read_csv("a,b,c\n4,5,6\n1,2,3")
 ```
 
 ### Skip rows and column names options
@@ -61,11 +61,16 @@ In both cases read_csv() uses the first line of the data for the column names, w
 1. __Sometimes there are a few lines of metadata at the top of the file__. You can use skip = n to skip the first n lines; or use comment = "#" to drop all lines that start with (e.g.) #.
 
 ```{r}
-read_csv("The first line of metadata
+(d <- read_csv("The first line of metadata
   The second line of metadata
   x,y,z
-  1,2,3", skip = 2)
+  1,2,3", skip = 2))
 ```
+
+```{r}
+problems(d)
+```
+
 
 ```{r}
 read_csv("# A comment I want to skip
@@ -187,9 +192,14 @@ You need to import one sheet at the time:
 (z_500 <- read_excel("data/ECIS_141022_MFT_1.xls", sheet = "Z 500 Hz"))
 ```
 
+```{r, eval = FALSE}
+(z <- read_excel("data/ECIS_141022_MFT_1.xls", sheet = 3:5))
+```
+
+
 To import multiple sheets, e.g. sheets 3 to 5:
 ```{r}
-mft <- map(sheets[3:5], ~read_excel("data/ECIS_141022_MFT_1.xls", sheet = .x))
+mft <- map(sheets[3:5], ~ read_excel("data/ECIS_141022_MFT_1.xls", sheet = .x))
 names(mft) <- sheets[3:5]
 bind_rows(mft, .id = "Param")
 ```
@@ -252,9 +262,9 @@ To tidy a dataset like this, we need to gather those columns into a new pair of 
 
 1. The set of columns that represent values, not variables. In this example, those are the columns starting from 2005.
 
-2. The name of the variable whose values form the column names. I call that the key, and here it is "Aasta" (Year).
+2. The name of the variable whose values form the column names. I call that the key, and here it is "Aasta" (year).
 
-3. The name of the variable whose values are spread over the cells. I call that value, and here it's the average bruto wage (Palk).
+3. The name of the variable whose values are spread over the cells. I call that value, and here it's the average bruto wage (wage).
 
 Together those parameters generate the call to gather():
 ```{r}
@@ -264,7 +274,7 @@ Together those parameters generate the call to gather():
 
 Note that "2005" to "2017" are non-syntactic names (because they don’t start with a letter) so we have to surround them in backticks.
 
-Let's merge wage data with average price per m^2 feom transactions data:
+Let's merge wage data with average price per m^2 from transactions data:
 ```{r}
 (trans <- read_csv("data/transactions.csv"))
 ```
@@ -296,7 +306,7 @@ wage_tidy <- mutate(wage_tidy, month = case_when(
 ```
 
 
-```{r}
+```{r, eval=FALSE}
 left_join(wage_tidy, price_permonth)
 ```
 
@@ -312,7 +322,7 @@ Is the relationship between real estate price and average wage linear?
 ```{r}
 salary_and_prices %>% 
   ggplot() +
-  geom_point(aes(x = wage, y = av_price, color = factor(year)))
+  geom_point(aes(x = wage, y = av_price, colour = factor(year)))
 ```
 
 ## Spreading
@@ -336,6 +346,12 @@ We need to place each key into separate column.
 spread(sp, key, value)
 ```
 
+```{r}
+sp[-6, ] %>% 
+  spread(key, value)
+```
+
+
 ## Separating and uniting
 
 We have one column that contains two variables. To fix this problem, we'll need the separate() function. 
@@ -343,6 +359,7 @@ We have one column that contains two variables. To fix this problem, we'll need 
 Complement of separate() is unite(), which you use if a single variable is spread across multiple columns.
 
 ### Separate
+let's make example table:
 ```{r}
 (Rb <- select(rba, `Well ID_Time (hrs)`, contains("Rb")))
 ```
