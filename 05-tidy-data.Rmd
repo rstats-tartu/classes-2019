@@ -282,27 +282,32 @@ Let's merge wage data with average price per m^2 from transactions data:
 
 To combine the tidied versions of wages and transactions into a single tibble, we need to use dplyr::left_join()
 ```{r}
+library(lubridate)
 (price_permonth <- trans %>% 
-  group_by(year, month) %>% 
-  summarise(av_price = mean(price_unit_area_mean, na.rm = TRUE)))
+   mutate(year = year(Kuu),
+          month = month(Kuu)) %>%
+    select(year, month, everything()) %>% 
+    group_by(year, month) %>%
+    summarise(av_price = mean(`Pinnaühiku hind(eur /m2) Keskmine`, na.rm = TRUE)))
 ```
 
 We need to change months to integers:
 ```{r}
-wage_tidy <- mutate(wage_tidy, month = case_when(
-  str_detect(month, "Jaan") ~ 1,
-  str_detect(month, "Veeb") ~ 2,
-  month == "Märts" ~ 3,
-  month == "Aprill" ~ 4,
-  month == "Mai" ~ 5,
-  month == "Juuni" ~ 6,
-  month == "Juuli" ~ 7,
-  month == "August" ~ 8,
-  month == "September" ~ 9,
-  month == "Oktoober" ~ 10,
-  month == "November" ~ 11,
-  month == "Detsember" ~ 12
-))
+(wage_tidy <- mutate(wage_tidy,
+                    month = case_when(
+                      str_detect(month, "Jaan") ~ 1,
+                      str_detect(month, "Veeb") ~ 2,
+                      month == "Märts" ~ 3,
+                      month == "Aprill" ~ 4,
+                      month == "Mai" ~ 5,
+                      month == "Juuni" ~ 6,
+                      month == "Juuli" ~ 7,
+                      month == "August" ~ 8,
+                      month == "September" ~ 9,
+                      month == "Oktoober" ~ 10,
+                      month == "November" ~ 11,
+                      month == "Detsember" ~ 12
+                    )))
 ```
 
 
