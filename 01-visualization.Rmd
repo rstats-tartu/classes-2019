@@ -1,41 +1,20 @@
 ---
 title: "Data visualisation using ggplot2"
 author: "Taavi Päll"
-date: "19 3 2018"
+date: "2018-09-25"
 output: 
-  github_document: default
-  html_notebook:
-    theme: united
-    highlight: tango
-    df_print: paged
+  output: learnr::tutorial
+  runtime: shiny_prerendered
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-# Class I
-
-Visualization of your analysis results or data is not only the matter of taste but must be effective and present your results and data honestly.
-
-
-Numerical summaries, like arithmetic mean or correlation coefficient, can be deceiving when shape of the data is not known or shown, think of average salary or **datasaurus**.
-
-
-Therefore, data visualization is natural starting point of every data analysis workflow.
-
-```{r}
-library(datasauRus)
-library(tidyverse)
-ggplot2::ggplot(datasaurus_dozen) +
-  ggplot2::geom_point(ggplot2::aes(x, y)) +
-  ggplot2::facet_wrap(~ dataset) +
-  ggplot2::labs(title = "Datasurus: these 12 datasets are equal in standard measures:\nmean, standard deviation, and Pearson's correlation")
-```
-
-Here we get started with R from the standpoint of visualization. (Luckily for you it's not data structures or subsetting. We leave these topics for later, so don't be worried.)
+Here we get started with R from the standpoint of visualization.
 
 ## Sources
+
 - This tutorial is heavily based on "Data visualization with ggplot2" chapter in [R4DS](http://r4ds.had.co.nz/data-visualisation.html) by G. Grolemund and H. Wickham.
 - [lectures/graafilised-lahendused](https://rstats-tartu.github.io/lectures/graafilised-lahendused.html) and [learn-r/ggplot2](https://tpall.github.io/learn-r/#ggplot2) by Ülo Maiväli and Taavi Päll
 
