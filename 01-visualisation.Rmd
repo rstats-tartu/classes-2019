@@ -9,7 +9,8 @@ output: github_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-Here we get started with R from the standpoint of visualisation.
+Here we get started with R from the standpoint of visualisation. 
+We learn how to make basic scatterplot and how to map variables to point color, size, or shape.
 
 ## Sources
 
