@@ -1,7 +1,6 @@
 ---
-title: "ggplot homework"
-author: "Taavi Päll"
-date: "3/19/2018"
+title: "Homework 1: ggplot2"
+date: "2018-09-25"
 output: github_document
 ---
 
@@ -10,59 +9,45 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 ```{r}
-library(tidyverse)
+library(ggplot2)
 ```
 
+By using *mpg* dataset:
+
+1. Map a continuous variable to color, size, and shape. How do these aesthetics behave differently for categorical vs. continuous variables?
+
+Color
 ```{r}
-mpg
+
 ```
 
-
-3. Map a continuous variable to color, size, and shape. How do these aesthetics behave differently for categorical vs. continuous variables?
-
-
-# Color
+Size
 ```{r}
-ggplot(mpg) +
-  geom_point(mapping = aes(x = cty, y = hwy, color = displ))
+
 ```
 
-# Size
+Shape
 ```{r}
-ggplot(mpg) +
-  geom_point(mapping = aes(x = cty, y = hwy, size = displ))
-```
 
-# Shape
-```{r}
-ggplot(mpg) +
-  geom_point(mapping = aes(x = cty, y = hwy, shape = displ))
 ```
 
 
-4. What happens if you map the same variable to multiple aesthetics?
+2. What happens if you map the same variable to multiple aesthetics?
 
 ```{r}
-ggplot(mpg) +
-  geom_point(mapping = aes(x = cty, y = hwy, color = displ, size = displ))
+
 ```
 
 
-5. What does the stroke aesthetic do? What shapes does it work with? (Hint: use ?geom_point)
-
-- For shapes that have a border (like 21),
+3. What does the stroke aesthetic do? What shapes does it work with? (Hint: use ?geom_point)
 
 ```{r}
-?geom_point
-ggplot(mpg) +
-  geom_point(mapping = aes(x = cty, y = hwy, stroke = displ, color = cyl), shape = 21)
+
 ```
 
-
-6. What happens if you map an aesthetic to something other than a variable name, like aes(colour = displ < 5)?
+4. What happens if you map an aesthetic to something other than a variable name, like aes(colour = displ < 5)?
 
 ```{r}
-ggplot(mpg) +
-  geom_point(mapping = aes(x = cty, y = hwy, color = displ < 5))
+
 ```
 
