@@ -118,7 +118,7 @@ Is such plot useful?
 
 ## Aesthetic mappings
 
-hwy ~ displ scatter plot tells us that there is linear relationship between engine size and fuel consumption: bigger engines use more fuel and are therefore less efficient.
+hwy ~ displ scatterplot tells us that there is linear relationship between engine size and fuel consumption: bigger engines use more fuel and are therefore less efficient.
 Nevertheless, if we look at the cars with huge engines (>5L), it's apparent that there are some outliers (plot below) that perform better than cars in this engine class in general.
 
 What are those cars? Do they have something in common?
@@ -132,16 +132,18 @@ To get a clue about the nature of these outliers, we would like add more info pr
 
 > Aesthetics like color, shape, fill, and size can be used to add additional variables to a plot.
 
-By mapping displ to x-axis and hwy to y-axis let's map additionally color of the points to class variable in mpg dataset to reveal the class of each car:
+By mapping displ to x-axis and hwy to y-axis let's map additionally color of the points to class variable (color = class) in mpg dataset to reveal the class of each car:
 ```{r}
-
+ggplot(data = mpg) +
+  geom_point(mapping = aes(x = displ, y = hwy, color = class))
 ```
 
 We can see that most of the cars with large motors with better fuel efficiency belong to sports cars (2seaters).
 
 Let's recreate previous plot with class mapped to size of each point:
 ```{r}
-
+ggplot(data = mpg) +
+  geom_point(mapping = aes(x = displ, y = hwy, size = class))
 ```
 
 Ouch, we get warning... seems its not a good idea. Why?
@@ -150,13 +152,14 @@ What's wrong with the next plot where we have four categories ("tiny", "small", 
 
 Here we create toy data frame where we have categorical variable diameter for four x values, y is all same. 
 ```{r}
-diameters <- data_frame(x = 1:4, y = 1, diameter = c("tiny", "small", "big", "very big"))
-diameters
+diameter <- data_frame(x = 1:4, y = 1, diameter = c("tiny", "small", "big", "very big"))
+diameter
 ```
 
 Now let's create scatterplot y~x and map diameter to point **size**:
 ```{r}
-
+ggplot(data = diameter) +
+  geom_point(mapping = aes(x = x, y = y, size = diameter))
 ```
 
 Maybe this plot explains why it's generally not a good idea to map categorical variable to size aesthetic.
@@ -166,21 +169,29 @@ Maybe this plot explains why it's generally not a good idea to map categorical v
 1. Update code. Map *alpha* aesthetic to class:
 ```{r}
 ggplot(data = mpg) + 
-  geom_point(mapping = aes(x = displ, y = hwy))
+  geom_point(mapping = aes(x = displ, y = hwy, alpha = class))
 ```
 
-2. Update code. Map *size* aesthetic to class:
+2. Update code. Map *shape* aesthetic to class. Update code so that there will be 7 shapes instead of default 6:
 ```{r}
 ggplot(data = mpg) + 
-  geom_point(mapping = aes(x = displ, y = hwy))
+  geom_point(mapping = aes(x = displ, y = hwy, shape = class)) +
+  scale_shape_manual(values = 1:7)
 ```
 
 Is everything OK with shapes?
 
 3. Using **dplyr** built-in starwars dataset (hint: starwars) make height~mass scatterplot and map one continuous variable to size:
 ```{r}
-
+starwars
 ```
+
+```{r}
+ggplot(data = starwars, mapping = aes(x = height, y = mass)) +
+  geom_point(mapping = aes(size = birth_year)) +
+  geom_text(mapping = aes(label = name))
+```
+
 
 > When you set your aesthetic via mapping, ggplot automatically takes care of the rest: it finds best scale to display selected aesthetic and draws a legend. Note that this happens only when you map aesthetic within aes() function.
  
@@ -189,7 +200,8 @@ You can change the appearance of your plot also manually: change the color or sh
 
 For example, let's suppose you want to make all points in plot blue in displ~hwy scatterplot using mpg data:
 ```{r}
-# try HEX code "#0000ff" or rgb(0,0,1)
+ggplot(data = mpg) +
+  geom_point(mapping = aes(x = displ, y = hwy), color = "blue") # try HEX code "#0000ff" or rgb(0,0,1)
 ```
 
 Here, the color is not connected to the variable in your dataset, but just changes the appearance of the plot. 
@@ -203,6 +215,12 @@ You just have to pick a value that makes sense for that aesthetic:
 - shape of a point as a number
 
 Examples!
+
+```{r}
+ggplot(data = mpg) +
+  geom_point(mapping = aes(x = displ, y = hwy, color = class), size = 10)
+```
+
 
 ### Shape codes
 While colors and sizes are intuitive, it seems impossible to remember available point shape codes in R. The quickest way out of this is to know how to generate an example plot of the first 25 shapes quickly. Numbers next to shapes denote R shape number.
@@ -218,13 +236,13 @@ ggplot(data = data_frame(x = rep(1:5, 5), y = rep(5:1, each = 5), shape = c(0:24
 
 Update code:
 - Let's map more than 6 shapes to class and 
-- use fill = "green", color = "blue", to change the appearance of the points, and
-- adjust size of the points (size = 3) for better visibility. 
+- use fill = "green", color = "blue", to change the appearance of the ALL points, and
+- adjust size of the ALL points (size = 3) for better visibility. 
 
 ```{r}
 ggplot(data = mpg) + 
-  geom_point(mapping = aes(x = displ, y = hwy)) +
-  scale_shape_manual(values = 0:6)
+  geom_jitter(mapping = aes(x = displ, y = hwy, shape = class), fill = "green", color = "blue", size = 3) +
+  scale_shape_manual(values = c(16:19, 21:24))
 ```
 
 Note the differences how fill and color work on different point shapes! Which is the default point shape in ggplot?
@@ -234,7 +252,7 @@ Note the differences how fill and color work on different point shapes! Which is
 1. What's wrong with this plot? Why are points not blue? Can you fix the code?
 ```{r}
 ggplot(data = mpg) +
-  geom_point(mapping = aes(x = displ, y = hwy, color = "blue"))
+  geom_point(mapping = aes(x = displ, y = hwy), color = "blue")
 ```
 
 2. Which variables in mpg are categorical? Which variables are continuous? (type ?mpg to read the documentation for the dataset). How can you see when you run mpg?
