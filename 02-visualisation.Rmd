@@ -1,5 +1,5 @@
 ---
-title: "Untitled"
+title: "ggplot: beyond dotplots"
 author: "Taavi Päll"
 date: "24 9 2018"
 output: html_document
@@ -13,7 +13,9 @@ knitr::opts_chunk$set(echo = TRUE)
 
 We used color, shape and alpha (transparency) to display additional subset in a two-dimensional graph. Using different colours allows visual inference of the distribution of the groups under comparison. But there is apparent limit how much of such information can be accommodated onto one graph before it gets too cluttered.
 
-In addition to reducing visual clutter and overplotting, we can use small subplots just as an another way to bring out subsets from our data. Series of small subplots (multiples) use same scale and axes allowing easier comparisons and are considered very efficient design. Fortunately, ggplot has easy way to do this: facet_wrap() and facet_grid() functions split up your dataset and generate multiple small plots arranged in an array. facet_wrap() works with one variable and facet_grid() can use two variables.  
+In addition to reducing visual clutter and overplotting, we can use small subplots just as an another way to bring out subsets from our data. Series of small subplots (multiples) use same scale and axes allowing easier comparisons and are considered very efficient design. Fortunately, ggplot has easy way to do this: facet_wrap() and facet_grid() functions split up your dataset and generate multiple small plots arranged in an array. 
+
+facet_wrap() works with one variable and facet_grid() can use two variables.  
 
 > At the heart of quantitative reasoning is a single question: Compared to what? Small multiple designs.. answer directly by visually enforcing comparisons of changes, of the differences among objects, of the scope of alternatives. For a wide range of problems in data presentation, small multiples are the best design solution. Edward Tufte (Envisioning Information, p. 67).
 
@@ -23,9 +25,9 @@ library(tidyverse)
 
 Here, we plot each class of cars on a separate subplot and we arrange plots into 2 rows:
 ```{r}
-ggplot(data = mpg) + 
-  geom_point(mapping = aes(x = displ, y = hwy)) + 
-  facet_wrap("class", nrow = 2)
+ggplot(data = mpg) +
+  geom_point(mapping = aes(x = displ, y = hwy)) +
+  facet_wrap("class")
 ```
 
 To plot combination of two variables, we use facet_grid():
@@ -48,9 +50,27 @@ ggplot(data = mpg) +
 ```{r}
 ggplot(data = mpg) + 
   geom_point(mapping = aes(x = displ, y = hwy)) + 
-  facet_grid(drv ~ cyl, scales = "free")
+  facet_grid(drv ~ cyl, scales = "free_y")
 ```
 
+```{r}
+ggplot(data = mpg) + 
+  geom_point(mapping = aes(x = displ, y = hwy)) + 
+  facet_grid(drv ~ cyl, scales = "free_x")
+```
+
+
+```{r}
+ggplot(data = mpg) + 
+  geom_point(mapping = aes(x = displ, y = hwy)) + 
+  facet_grid(drv ~ cyl, scales = "free") # free scale for both: x and y axis
+```
+
+```{r}
+ggplot(data = mpg) + 
+  geom_point(mapping = aes(x = displ, y = hwy)) + 
+  facet_wrap("drv", scales = "free_y")
+```
 
 
 ## Exercises
@@ -66,7 +86,7 @@ ggplot(data = mpg) +
   geom_point(mapping = aes(x = displ, y = hwy)) + 
   facet_wrap(~ displ)
 ```
-Each raw value is contverted to categorical value and gets its own facet?
+Each raw value is converted to categorical value and gets its own facet?
 
 2. What do the empty cells in plot with facet_grid(drv ~ cyl) mean? How do they relate to this plot?
 ```{r}
@@ -85,10 +105,35 @@ ggplot(data = mpg) +
   facet_grid(. ~ cyl)
 ```
 
-4. Read ?facet_wrap. What does nrow do? What does ncol do? What other options control the layout of the individual panels? Why doesn't facet_grid() have nrow and ncol argumentt.
+4. Read ?facet_wrap. What does nrow do? What does ncol do? What other options control the layout of the individual panels? Why doesn't facet_grid() have nrow and ncol argument.
+
+```{r}
+?facet_wrap
+```
+
+
+```{r}
+ggplot(data = mpg) + 
+  geom_point(mapping = aes(x = displ, y = hwy)) +
+  facet_wrap(~ cyl, nrow = 2, ncol = 3)
+```
 
 
 5. When using facet_grid() you should usually put the variable with more unique levels in the columns. Why?
+
+```{r}
+ggplot(data = mpg) + 
+  geom_point(mapping = aes(x = displ, y = hwy)) + 
+  facet_grid(drv ~ cyl)
+```
+
+Not endorsed?
+```{r}
+ggplot(data = mpg) + 
+  geom_point(mapping = aes(x = displ, y = hwy)) + 
+  facet_grid(cyl ~ drv)
+```
+
 
 ## Geometric objects aka geoms
 To change the geom in your plot, change the __geom function__ that you add to ggplot(). 
@@ -112,11 +157,12 @@ However, note that __not every aesthetic works with every geom.__
 - You could set the shape of a point, but you couldn't set the "shape" of a line. 
 - On the other hand, you could set the linetype of a line. 
 
-We can tweak the above plot by mapping each type of drivetrain (drv) to different linetype.
+We can tweak the above plot by mapping each type of drive (drv) to different linetype.
 
 ```{r}
 ggplot(data = mpg) + 
-  geom_smooth(mapping = aes(x = displ, y = hwy, linetype = drv))
+  geom_smooth(mapping = aes(x = displ, y = hwy, linetype = drv, color = drv)) +
+  scale_color_manual(values = viridisLite::viridis(3))
 ```
 
 Here, 4 stands for four-wheel drive, f for front-wheel drive, and r for rear-wheel drive. 
