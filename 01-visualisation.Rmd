@@ -192,6 +192,14 @@ ggplot(data = starwars, mapping = aes(x = height, y = mass)) +
   geom_text(mapping = aes(label = name))
 ```
 
+To do it right, we can use a much nicer function geom_label_repel(), and map the birth year to color.
+
+```{r}
+ggplot(data = starwars, mapping = aes(x = height, y = mass)) +
+  geom_point(mapping = aes(color = birth_year)) +
+  ggrepel::geom_label_repel(data = filter(starwars, mass > 1000), aes(label = name))
+```
+
 
 > When you set your aesthetic via mapping, ggplot automatically takes care of the rest: it finds best scale to display selected aesthetic and draws a legend. Note that this happens only when you map aesthetic within aes() function.
  
