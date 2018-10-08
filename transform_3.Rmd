@@ -1,0 +1,191 @@
+---
+title: "Data transformation using dplyr (aka five verbs) 3"
+author: "Taavi Päll"
+date: "16. oktoober 2018"
+output: github_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Load tidyverse library and dataset:
+```{r}
+
+```
+
+## Useful summary functions
+
+R provides many useful summary functions:
+
+- Measures of location: we have used mean(x), but median(x) is also useful. It's sometimes useful to combine aggregation with logical subsetting.
+
+
+Here, we calculate average total price for comparison also for rows with more than 100 transactions. ungroup() is necessary for filter function in this context:
+```{r}
+transactions %>% 
+  group_by(county, area) %>% 
+  summarise(Av_total_price = mean(price_total, na.rm = TRUE),
+            Av_total_price100 = mean(price_total[transactions > 100], na.rm = TRUE),
+            N = n()) %>% 
+  ungroup() %>% 
+  filter(complete.cases(.))
+```
+
+- Measures of spread: sd(x), IQR(x), mad(x). The mean squared deviation, or standard deviation or sd for short, is the standard measure of spread. The interquartile range IQR() and median absolute deviation mad(x) are robust equivalents that may be more useful if you have outliers
+
+```{r}
+transactions %>% 
+  group_by(county, area) %>% 
+  summarise(Mean_total_price = mean(price_total, na.rm = TRUE),
+            SD_total_price = sd(price_total, na.rm = TRUE),
+            N = n()) %>% 
+  arrange(desc(SD_total_price))
+```
+
+- Measures of rank: min(x), quantile(x, 0.25), max(x). Quantiles are a generalisation of the median. For example, quantile(x, 0.25) will find a value of x that is greater than 25% of the values, and less than the remaining 75%.
+
+```{r}
+transactions %>% 
+  group_by(county, area) %>% 
+  summarise(min_tot_price = min(price_total, na.rm = TRUE),
+            max_tot_price = max(price_total, na.rm = TRUE),
+            difference = max_tot_price - min_tot_price) %>% 
+  arrange(desc(difference))
+```
+
+- Measures of position: first(x), nth(x, 2), last(x). These work similarly to x[1], x[2], and x[length(x)] but let you set a default value if that position does not exist (i.e. you're trying to get the 3rd element from a group that only has two elements). For example, we can find the first and last departure for each day:
+
+Here, we use again flights dataset:
+```{r}
+not_cancelled <- flights %>% 
+  filter(!is.na(dep_delay), !is.na(arr_delay))
+not_cancelled %>% 
+  group_by(year, month, day) %>% 
+  summarise(
+    first_dep = first(dep_time), 
+    last_dep = last(dep_time)
+  )
+```
+
+- Counts: You've seen n(), which takes no arguments, and returns the size of the current group. To count the number of non-missing values, use sum(!is.na(x)). To count the number of distinct (unique) values, use n_distinct(x).
+
+```{r}
+# Which destinations have the most carriers?
+not_cancelled %>% 
+  group_by(dest) %>% 
+  summarise(carriers = n_distinct(carrier)) %>% 
+  arrange(desc(carriers))
+```
+
+Counts are so useful that dplyr provides a simple helper if all you want is a count:
+```{r}
+not_cancelled %>% 
+  count(dest)
+```
+
+How many apartments with more than 5 transaction:
+```{r}
+transactions %>% 
+  count(area, transactions > 5)
+```
+
+
+You can optionally provide a weight variable. For example, you could use this to "count" (sum) the total number of transactions for each county:
+```{r}
+transactions %>% 
+  count(county, wt = transactions)
+```
+
+- Counts and proportions of logical values: sum(x > 10), mean(y == 0). When used with numeric functions, TRUE is converted to 1 and FALSE to 0. This makes sum() and mean() very useful: sum(x) gives the number of TRUEs in x, and mean(x) gives the proportion.
+
+```{r}
+transactions %>% 
+  group_by(area) %>% 
+  summarise(N = sum(transactions > 5),
+            `%` = mean(transactions > 5))
+```
+
+## Grouping by multiple variables
+
+When you group by multiple variables, each summary peels off one level of the grouping. That makes it easy to progressively roll up a dataset:
+
+```{r}
+by_year <- transactions %>% 
+  group_by(year, county, area) 
+(year_county_area <- summarise(by_year, n = sum(transactions)))
+```
+
+```{r}
+(year_county <- summarise(year_county_area, n = sum(n)))
+```
+
+```{r}
+(year <- summarise(year_county, n = sum(n)))
+```
+
+> Be careful when progressively rolling up summaries: it's OK for sums and counts, but you need to think about weighting means and variances, and it’s not possible to do it exactly for rank-based statistics like the median. In other words, the sum of groupwise sums is the overall sum, but the median of groupwise medians is not the overall median.
+
+## Ungrouping
+
+If you need to remove grouping, and return to operations on ungrouped data, use ungroup().
+
+```{r}
+by_year %>% 
+  ungroup() %>%             # no longer grouped by year, county and area
+  summarise(N = sum(transactions))
+```
+
+### Exercises
+
+1. Brainstorm at least 5 different ways to assess the typical delay characteristics of a group of flights. Consider the following scenarios:
+
+  - A flight is 15 minutes early 50% of the time, and 15 minutes late 50% of the time.
+
+  - A flight is always 10 minutes late.
+
+  - A flight is 30 minutes early 50% of the time, and 30 minutes late 50% of the time.
+
+  - 99% of the time a flight is on time. 1% of the time it’s 2 hours late.
+
+  - Which is more important: arrival delay or departure delay?
+
+2. Come up with another approach that will give you the same output as not_cancelled %>% count(dest) and not_cancelled %>% count(tailnum, wt = distance) (without using count()).
+
+3. Our definition of cancelled flights (is.na(dep_delay) | is.na(arr_delay) ) is slightly suboptimal. Why? Which is the most important column?
+
+4. Look at the number of cancelled flights per day. Is there a pattern? Is the proportion of cancelled flights related to the average delay?
+
+5. Which carrier has the worst delays? Challenge: can you disentangle the effects of bad airports vs. bad carriers? Why/why not? (Hint: think about flights %>% group_by(carrier, dest) %>% summarise(n()))
+
+6. What does the sort argument to count() do. When might you use it?
+
+## Grouped mutates (and filters)
+
+Grouping is most useful in conjunction with summarise(), but you can also do convenient operations with mutate() and filter():
+
+- Find the best (#1) month for each apartment type:
+
+```{r}
+transactions %>% 
+  group_by(area) %>% 
+  filter(rank(desc(transactions)) == 1)
+```
+
+Nothing beats Oct-Dec 2005...
+
+- Find all groups bigger than a threshold:
+
+```{r}
+transactions %>% 
+  group_by(year, county, area) %>% 
+  filter(sum(transactions) > 1000)
+```
+
+- Standardise to compute per group metrics:
+```{r}
+year %>%
+  mutate(prop_trans = n / sum(n))
+```
+
+The number of transactions was highest in ...
