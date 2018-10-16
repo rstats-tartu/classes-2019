@@ -36,15 +36,15 @@ Again, we are going to follow closely R4DS book chapter "Data transformation" av
 
 Load tidyverse library and dataset:
 ```{r}
-
+library(tidyverse)
 ```
 
-### Estonian apartment transactions data. 
+### Estonian apartment transactions data 
 Transactions data contain monthly apartment sales data from January 2005 to October 2018 split up by counties and size of apartments. Price info is available when at least five transactions has been carried out.
 
 Let's import transactions_with_consumer_price_index.csv file from data subfolder: 
 ```{r}
-
+(transactions <- read_csv("data/transactions_with_consumer_price_index.csv"))
 ```
 
 
@@ -71,13 +71,17 @@ All verbs work similarly:
 
 - The result is a new data frame.
 
-Together these properties make it easy to chain together multiple simple steps to achieve a complex result. Let’s dive in and see how these verbs work.
+Together these properties make it easy to chain together multiple simple steps to achieve a complex result. Let's dive in and see how these verbs work.
 
 ## Prepare data, cont. 
 
 Let's improve these terrible column names:
 ```{r}
+colnames(transactions) <- c("date", "county", "area", "count", "area_total", "area_mean", "price_total", "price_min", "price_max", "area_price_min", "area_price_max", "area_price_median", "area_price_mean", "area_price_sd", "month", "year", "price_index")
+```
 
+```{r}
+transactions
 ```
 
 
@@ -87,16 +91,16 @@ filter() allows you to subset observations based on their values. The first argu
 
 For example, we can select data from 'Tartu maakond':
 ```{r}
-
+filter(transactions, county == "Tartu maakond")
 ```
 
 dplyr runs the filtering operation and returns a new data frame. 
 
 dplyr functions never modify their inputs, so if you want to save the result, you'll need to use the assignment operator, <-:
 
-Assign data from 'Tartu maakond' to object tartu_mk:
+Assign data from 'Tartu maakond' to object tartu_county:
 ```{r}
-
+(tartu_county <- filter(transactions, county == "Tartu maakond"))
 ```
 
 ### Comparisons
@@ -108,7 +112,9 @@ filter(transactions, year = 2005)
 
 It appears that = is another assignment operator besides ->
 
-There's another common problem you might encounter when using ==: floating point numbers. Although, theoretically TRUE, following comparisons return FALSE!
+There's another common problem you might encounter when using ==: floating point numbers. 
+
+Although, theoretically TRUE, following comparisons return FALSE!
 ```{r}
 sqrt(2) ^ 2 == 2
 1/49 * 49 == 1
@@ -132,12 +138,12 @@ Together, logical (boolean) operators are:
 - | is OR, 
 - ! is NOT
 
-The following code finds all transactions in November OR December:
+The following code finds all transactions in November (11) OR December (12):
 ```{r}
-
+filter(transactions, month == 11 | month == 12)
 ```
 
-You can’t write filter(flights, month == 11 | 12) and in case of numeric months this will give you wrong answer instead of Error, so be careful:
+You can't write filter(flights, month == 11 | 12) and in case of numeric months this will give you wrong answer instead of Error, so be careful:
 ```{r, eval=FALSE}
 filter(transactions, kuu == 11 | 12)
 ```
@@ -146,19 +152,28 @@ A useful short-hand for this problem is x %in% y. This will select every row whe
 
 Filter observations where kuu (month) is Nov or Dec (we have numeric months in data frame):
 ```{r}
-
+filter(transactions, month %in% c(11, 12))
 ```
 
+```{r}
+all.equal(c(11, 12), 11:12)
+```
+
+
 Sometimes you can simplify complicated subsetting by remembering De Morgan's law: !(x & y) is the same as !x | !y, and !(x | y) is the same as !x & !y. 
+
 For example, if you wanted to find months with 5 to 10 transactions, you could use either of the following two filters:
 ```{r}
-filter(transactions, !(arv < 5 | arv > 10))
-filter(transactions,  !arv < 5, !arv > 10)
+filter(transactions, !(count < 5 | count > 10))
+filter(transactions, !count < 5, !count > 10)
 ```
 
 ### Missing values
 
-One important feature of R that can make comparison tricky are missing values, or NAs ("not availables"). NA represents an unknown value so missing values are "contagious": almost any operation involving an unknown value will also be unknown.
+One important feature of R that can make comparison tricky are missing values, or NAs ("not availables"). 
+
+NA represents an unknown value so missing values are "contagious": almost any operation involving an unknown value will also be unknown.
+
 ```{r}
 NA > 5
 10 == NA
@@ -172,56 +187,36 @@ x <- NA
 is.na(x)
 ```
 
-Let's use is.na() within filter to remove rows with missing price info (`tehingu summa (eur) kokku`):
+Let's use is.na() within filter to filter rows with missing price info (price_total):
 ```{r}
-
+filter(transactions, is.na(price_total))
 ```
 
 Ok. Now we got all rows with missing price_total... how would you change this code to really exclude these rows with missing data (Hint: !FALSE):
 ```{r}
-
+filter(transactions, !is.na(price_total))
 ```
 
 There is another function that works with data frames to find rows with complete set of observations - complete.cases():
 ```{r}
-
+complete.cases(transactions)
 ```
+
+
+```{r}
+filter(transactions, complete.cases(transactions))
+transactions %>% filter(complete.cases(.))
+```
+
+```{r}
+na.exclude(transactions)
+na.omit(transactions)
+drop_na(transactions)
+```
+
 
 Note that you need to put dot inside complete.cases() function. Why so? 
 You can try to feed transactions data directly to complete.cases(). How this output looks like?
-
-
-### Exercises - homework
-
-1. Find all transactions that
-
-- Had an area_mean more than one hundred square meters
-- Took place in Saare maakond
-- Were done during summer (July, August, and September). Another useful dplyr filtering helper is between(). What does it do?
-
-```{r}
-
-```
-
-
-2. How many rows have a missing total_price? What other variables are missing?
-
-```{r}
-
-```
-
-
-3. Why is NA ^ 0 not missing? Why is NA | TRUE not missing? Why is FALSE & NA not missing? Can you figure out the general rule? (NA * 0 is a tricky counterexample!)
-```{r}
-NA ^ 0
-NA | TRUE
-```
-
-```{r}
-NA * 0
-NA * FALSE
-```
-
 
 ## Arrange rows with arrange()
 
@@ -229,17 +224,17 @@ arrange() works similarly to filter() except that instead of selecting rows, it 
 
 It takes a data frame and a set of column names to order by. If you provide more than one column name, each additional column will be used to break ties in the values of preceding columns:
 ```{r}
-arrange(transactions, arv)
+arrange(transactions, count)
 ```
 
 Use desc() to re-order by a column in descending order:
 ```{r}
-arrange(transactions, desc(arv))
+arrange(transactions, desc(count))
 ```
 
 Missing values are always sorted at the end, even with desc() function:
 ```{r}
-df <- tibble(x = c(5, 2, NA))
+df <- data_frame(x = c(5, NA, 2))
 arrange(df, x)
 ```
 
@@ -252,7 +247,7 @@ arrange(df, desc(x))
 1. How could you use arrange() to sort all missing values to the start? (Hint: use is.na()).
 
 ```{r}
-
+arrange(transactions, !is.na(price_total))
 ```
 
 
@@ -284,35 +279,63 @@ come back again...
 
 select() allows you to rapidly zoom in on a useful subset of columns using operations based on the names of the variables.
 
-Select three columns:
+Select first three columns:
 ```{r}
-
+select(transactions, 1:3)
 ```
 
-Select columns from aasta to arv:
+Select columns from year to count:
 ```{r}
+select(transactions, year:count)
+```
 
+!!! select works in both directions: L>R and R<L!
+select year, county, area and count
+```{r}
+select(transactions, year, county, area, count)
+```
+
+
+Exlude columns year, county, area and count:
+```{r}
+select(transactions, -year, -county, -area, -count)
 ```
 
 ```{r}
-
+select(transactions, -c("year", "county", "area", "count"))
 ```
 
+Use minus sign to exclude variables! You can submit variables to select as character vector.
 
-Exlude columns from `pindala(m2)` to :
-```{r}
-
-```
 
 There are a number of __helper functions you can use within select()__:
 
 - starts_with("abc"): matches names that begin with "abc".
 
+Select columns that start with "price"
+```{r}
+select(transactions, starts_with("price"))
+```
+
+
 - ends_with("xyz"): matches names that end with "xyz".
+
+
+Select columns that end with "max"
+```{r}
+select(transactions, ends_with("max"))
+```
+
 
 - contains("ijk"): matches names that contain "ijk".
 
-- matches("(.)\\1"): selects variables that match a regular expression. This one matches any variables that contain repeated characters. You’ll learn more about regular expressions in strings.
+All columns that contain word "price"
+```{r}
+select(transactions, contains("price"))
+```
+
+
+- matches("(.)\\1"): selects variables that match a regular expression. This one matches any variables that contain repeated characters. You'll learn more about regular expressions in strings.
 
 ```{r, eval = FALSE}
 matches("^abc") # same as starts_with("abc)
@@ -321,42 +344,56 @@ matches("ijk") # same as contains("ijk)
 ```
 
 
+```{r}
+select(transactions, matches("[[:punct:]]"))
+```
+
+
 - num_range("V", 1:3) matches V1, V2 and V3.
 
 - everything() is useful if you have a handful of variables you'd like to move to the start of the data frame.
 
+
+Move columns year and month to the start of the data frame, and keep all other columns.
+```{r}
+select(transactions, year, month, everything())
+```
+
+
 See ?select for more details.
 
-Move columns aasta and kuu to the start of the data frame, keep all other columns.
-```{r}
-
-```
 
 ### Exercises
 
-1. What happens if you include the name of a variable (e.g. arv) multiple times in a select() call?
+1. What happens if you include the name of a variable (e.g. count) multiple times in a select() call?
 
 ```{r}
-
+select(transactions, count, count, count)
 ```
 
 
 2. What does the one_of() function do? Why might it be helpful in conjunction with this vector?
 ```{r}
-(vars <- c())
+(vars <- c("area", "count", "fffffff"))
 select(transactions, one_of(vars))
 ```
+
+```{r, eval=FALSE}
+select(transactions, c("area", "count", "ffffff"))
+```
+
 
 3. Select from 'transactions' all variables that contain string 'PRICE' (note case!). 
 
 ```{r}
-
+select(transactions, contains("PRICE"))
 ```
 
 
 Does the result of running the following code surprise you? How do the select helpers deal with case by default? How can you change that default?
 ```{r}
 ?select
-select(transactions, contains("PRICE", ignore.case = FALSE))
+trans_price_case <- select(transactions, contains("PRICE", ignore.case = FALSE))
+class(trans_price_case)
 ```
 
