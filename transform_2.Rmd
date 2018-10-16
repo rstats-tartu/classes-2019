@@ -1,7 +1,7 @@
 ---
 title: "Data transformation using dplyr (aka five verbs) 2"
 author: "Taavi Päll"
-date: "10. oktoober 2018"
+date: "2018-10-16"
 output: github_document
 ---
 
@@ -11,7 +11,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 Load tidyverse library and dataset:
 ```{r}
-
+library(tidyverse)
 ```
 
 ## Add new variables with mutate()
@@ -21,13 +21,16 @@ To start illustrating what mutate does, let's have a look at the changes of real
 
 In Estonia, real estate market collapsed after 2008 economic crisis. In 2017, various sources started talking about the new bubble. Are we really near the bubble? We can start elucidating this by looking at the price dynamics.
 
-First, select smaller subset of columns: year to transactions, median price per unit area (ends with median) and consumer index.
+First, select smaller subset of columns: year to count, median price per unit area (ends with median) and consumer index.
+let's put year and month in to the begginning:
 ```{r}
-
+(median_price <- select(transactions, date, year, month, county, area, count, matches("(median|index)$")))
 ```
 
 Let's make a quick plot using Harjumaa data. 
 
+
+## You can skip this part if date column is present in data
 Oh, but we want to have time on the x axis. Whereas we have year and month columns in our dataset and these are not in the format that is recognised as time...
 
 We need to convert year and month to time format in the form "2005 Jan" or something..
@@ -44,12 +47,17 @@ paste0("a", "b", "foo")
 
 ```{r}
 library(lubridate)
-
 ```
 
-Let's plot price trend using median price per $m^2$ (price_unit_area_median) placing each county on separate facet: 
-```{r}
 
+## Plot Harju maakond data
+
+Let's plot price trend using median price per $m^2$ (area_price_median)
+```{r}
+median_price %>% 
+  filter(county == "Harju maakond") %>% 
+  ggplot() +
+  geom_line(aes(x = date, y = area_price_median, color = area))  
 ```
 
 You can check if x = time_string works in ggplot.
