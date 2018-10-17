@@ -66,36 +66,45 @@ We can see that in "Harju maakond" and "Tartu maakond" the nominal prices are re
 
 We can try to answer this question by bringing in also the inflation that helps to understand the real prices. We can adjust prices for inflation by normalizing them with consumer index. Luckily our transactions dataset already contains consumer indices as percent relative to year 2005 (code used to create this dataset is available in file "data-raw/download-apartment-data.R").
 
-Consumer index is expressed as percent relative to year 2005, first we need to convert to proportions and then we can calculate adjusted prices, like so:
+Consumer index is expressed as percent relative to year 2005, first we need to convert price_index to proportions and then we can calculate adjusted prices, like so:
 ```{r}
-
+(median_price <- mutate(median_price, index = price_index / 100,
+                        adj_area_price = area_price_median / index))
 ```
+
+mutate works on vectors!
+
 
 Plot out adjusted prices:
 ```{r}
-
+median_price %>% 
+  filter(county == "Harju maakond") %>% 
+  ggplot() +
+  geom_line(aes(x = date, y = adj_area_price, color = area))  
 ```
 
-As we can see, based on real values, there was still some potential for growth in 2017. 
+As we can see, based on real values, there was still some potential for growth in 2018. 
 
-But what happens at the very end of the lines? We try to find that out using arrange..
-
+What happened in other counties?
 ```{r}
-
+median_price %>% 
+  ggplot() +
+  geom_line(aes(x = date, y = adj_area_price, color = area)) +
+  facet_wrap(~ county)
 ```
-
-
-Let's fix previous plot by using filter:
-
-```{r}
-
-```
-
 
 You can keep only newly created variable by using transmute() function:
 ```{r}
-
+only_adj_price <- transmute(median_price, adj_area_price2 = area_price_median / index)
 ```
+
+What plot can we create with this one column?
+```{r}
+ggplot(data = only_adj_price) +
+  geom_histogram(mapping = aes(adj_area_price2), bins = 30) +
+  scale_x_log10()
+```
+
 
 
 ## Useful creation functions
@@ -108,6 +117,14 @@ Some of the functions are familiar from base R class:
 - Arithmetic operators: +, -, *, /, ^.
 
 Arithmetic operators are also useful in conjunction with the aggregate functions. For example, x / sum(x) calculates the proportion of a total, and y - mean(y) computes the difference from the mean.
+
+Let's calculate proportion of transactions per apartement and month and county
+```{r}
+transactions %>% 
+  mutate(prop = count / sum(count, na.rm = TRUE)) %>% 
+  select(date:count, prop)
+```
+
 
 - Modular arithmetic: %/% (integer division) and %% (remainder, modulus), where x == y * (x %/% y) + (x %% y). Modular arithmetic is a handy tool because it allows you to break integers up into pieces. For example, in the tidyverse flights dataset, you can compute hour and minute from dep_time with:
 
@@ -136,7 +153,7 @@ ggplot(data = transactions) +
 
 We can have better look at the distibution by using log transformaton.
 ```{r}
-price <- transmute(transactions, price_max_log = log10(price_max))
+price <- mutate(transactions, price_max_log = log10(price_max))
 ggplot(data = price) +
   geom_histogram(mapping = aes(x = price_max_log))
 ```
