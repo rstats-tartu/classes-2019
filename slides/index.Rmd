@@ -1,12 +1,14 @@
 ---
-title: "Data visualisation using ggplot2"
-subtitle: "R stats TAY"
+title: "Why data visualisation matters"
+subtitle: "R stats TalTech"
 author: "Taavi Päll"
-date: "2018-09-25"
+date: "2019-03-04"
 output:
   xaringan::moon_reader:
     lib_dir: libs
     nature:
+      ratio: '16:9'
+      navigation: true
       highlightStyle: github
       highlightLines: true
       countIncrementalSlides: false
@@ -36,7 +38,7 @@ class: inverse, center, middle
 
 ---
 
-## Start every analysis by visualisation
+## Start every analysis with visualisation
 
 - Data visualisation is natural starting point of every data analysis workflow
 
