@@ -1,0 +1,111 @@
+---
+title: "Data visualisation using ggplot2"
+subtitle: "R stats TAY"
+author: "Taavi Päll"
+date: "2018-09-25"
+output:
+  xaringan::moon_reader:
+    lib_dir: libs
+    nature:
+      highlightStyle: github
+      highlightLines: true
+      countIncrementalSlides: false
+---
+
+```{r setup, include=FALSE}
+options(htmltools.dir.version = FALSE)
+knitr::opts_chunk$set(message = FALSE, fig.align = 'center')
+```
+
+
+class: inverse, center, middle
+
+# Intro
+
+---
+
+## Why data visualisation matters
+
+- Numerical summaries, like arithmetic mean or correlation coefficient, can be deceiving when shape of the data is not known or shown
+
+- Visualisation of your analysis results or data must be effective and present your results and data honestly
+
+???
+
+- think of average salary or **datasaurus**
+
+---
+
+## Start every analysis by visualisation
+
+- Data visualisation is natural starting point of every data analysis workflow
+
+- Let's have look at the **datasaurus** dataset
+    - here we have x and y variables for 13 variables (away, bullseye, etc.) 
+
+```{r}
+library(datasauRus)
+datasaurus_dozen_wide
+```
+
+---
+
+## Statistical properties of each dataset
+
+- What is the correlation between x and y in different datasets?
+- Here we calculate correlation coefficient for each dataset:
+```{r}
+library(dplyr)
+datasaurus_dozen %>% 
+  group_by(dataset) %>% 
+  summarise(`Pearson's r` = cor(x, y))
+```
+
+---
+
+## How are x and y related to each other?
+
+- We can see that all these datasets display similar relationship between x and y variable
+- What about mean and standard deviation?
+```{r}
+datasaurus_dozen %>% 
+  group_by(dataset) %>% 
+  summarise_at(vars(x, y), funs(mean, sd))
+```
+
+---
+
+## Conclusion???
+
+- We have dozen datasets with similar statistical properties
+- We can conclude that all these datasets have same parameters and come from from the same data generating process
+- As a final nuisance, let's create a some kind of plot (you know, reviewer...)
+
+---
+
+```{r}
+library(ggplot2)
+ggplot(datasaurus_dozen) +
+  geom_point(ggplot2::aes(x, y)) +
+  facet_wrap(~ dataset)
+```
+
+---
+class: middle, inverse
+
+> "never trust summary statistics alone; always visualize your data", since, while the data exhibits normal seeming statistics, plotting the data reveals a picture of a dinosaur. [Same Stats, Different Graphs: Generating Datasets with Varied Appearance and Identical Statistics through Simulated Annealing](https://www.autodeskresearch.com/publications/samestats)
+
+---
+
+## Summary
+
+- Data analysis is not entirely linear process and includes steps where you move in circles
+- After you have imported your data into analysis environment, you enter iterative process of data transformation, **visualisation**, and modeling, where you can spin until exhaustion
+
+```{r, echo=FALSE}
+knitr::include_graphics("http://r4ds.had.co.nz/diagrams/data-science-explore.png")
+```
+
+
+.footer[Image: http://r4ds.had.co.nz/explore-intro.html]
+
