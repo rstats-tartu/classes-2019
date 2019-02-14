@@ -1,274 +1,33 @@
 ---
-title: "Data visualisation using ggplot2"
+title: "ggplot: beyond dotplots"
 author: "Taavi Päll"
-date: "19 3 2018"
-output: 
-  github_document: default
-  html_notebook:
-    theme: united
-    highlight: tango
-    df_print: paged
+date: "24 9 2018"
+output: html_document
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-# Class I
-
-Visualization of your analysis results or data is not only the matter of taste but must be effective and present your results and data honestly.
-
-
-Numerical summaries, like arithmetic mean or correlation coefficient, can be deceiving when shape of the data is not known or shown, think of average salary or **datasaurus**.
-
-
-Therefore, data visualization is natural starting point of every data analysis workflow.
-
-```{r}
-library(datasauRus)
-library(tidyverse)
-ggplot2::ggplot(datasaurus_dozen) +
-  ggplot2::geom_point(ggplot2::aes(x, y)) +
-  ggplot2::facet_wrap(~ dataset) +
-  ggplot2::labs(title = "Datasurus: these 12 datasets are equal in standard measures:\nmean, standard deviation, and Pearson's correlation")
-```
-
-Here we get started with R from the standpoint of visualization. (Luckily for you it's not data structures or subsetting. We leave these topics for later, so don't be worried.)
-
-## Sources
-- This tutorial is heavily based on "Data visualization with ggplot2" chapter in [R4DS](http://r4ds.had.co.nz/data-visualisation.html) by G. Grolemund and H. Wickham.
-- [lectures/graafilised-lahendused](https://rstats-tartu.github.io/lectures/graafilised-lahendused.html) and [learn-r/ggplot2](https://tpall.github.io/learn-r/#ggplot2) by Ülo Maiväli and Taavi Päll
-
-## ggplot2
-**ggplot2** is an R package for producing statistical graphics based on the grammar of graphics (hence the gg!).
-
-Let's start by loading tidyverse (meta) library which provides us with set of necessary packages to start with data analysis and visualizations.
-
-```{r}
-library(tidyverse)
-```
-
-As you can see, running this line of code loads eight different packages (libraries) and warns that some of the functions (filter(), lag()) that were just loaded into namespace have identical name to functions that were already present in namespace.
-These new functions masked old ones and, in case you want to use these masked functions, you need to call them explicitly by using package where it comes from `stats::filter()`.
-
-If you get error message "there is no package called 'tidyverse'", then you need to install this package and run again `library()`:
-```{r, eval=FALSE}
-install.packages("tidyverse")
-library(tidyverse)
-```
-
-
-## First steps
-We need data to create plots! As for start, let's use ggplot2 built in dataset **mpg** with fuel economy data from 1999 and 2008 for 38 models of car:
-```{r}
-mpg # aka ggplot::mpg
-```
-
-If you worry where this dataset comes from, then there is no magic -- it's bundled with ggplot2 package and will be invisibly loaded every time when ggplot2 library is loaded. mpg invisibility means that, differently from your own R objects, it will not show up in your Environment panel.
-
-For us, key variables in mpg dataset are: 
-
-- `displ` -- engine displacement (L), 
-- `hwy` -- highway miles per gallon
-
-## Creating a ggplot
-
-Simple scatter plot to explore relationship between fuel consumption in highway traffic (hwy) and engine size (displ) is created like this.
-Here we put displ on the x-axis and hwy on the y-axis:
-
-```{r}
-ggplot(data = mpg) + 
-  geom_point(mapping = aes(x = displ, y = hwy)) +
-  labs(x = "Engine displacement",
-       y = "Miles per gallon")
-```
-
-Here you can see negative relationship between engine size and fuel consumption. It's probably no news to anyone that cars with big engines guzzle more fuel.
-
-+ **ggplot2 works iteratively** -- you start with a layer showing the raw data and then add layers of geoms, annotations, and statistical summaries.
-
-To compose plots, you have to supply minimally:
-
-+ **Data** that you want to visualize and 
-+ **aes**thetic **mappings** -- what's on x-axis, what's on y-axis, and how to you want to group and color your data. Mapped arguments must be found in your data!
-+ **Layers** made up of **geom**etric elements: points, lines, boxes, etc. What's shown on plot.
-
-Visualization of these three components within ggplot context looks like this:
-```
-ggplot(data = <DATA>) +
-  <GEOM_FUNCTION>(mapping = aes(<MAPPINGS>))
-```
-
-### Excercises
-
-1. Run ggplot(data = mpg). What do you see?
-```{r}
-ggplot(data = mpg)
-```
-
-2. How many rows are in mtcars dataset? How many columns?
-```{r}
-mpg
-```
-
-```{r}
-class(mpg)
-```
-
-
-3. What does the drv variable describe? Read help for ?mpg to find out.
-```{r}
-?mpg
-```
-
-4. Make scatterplot of *hwy* vs *cyl* using mpg data:
-```{r}
-ggplot(data = mpg) +
-  geom_point(mapping = aes(x = cyl, y = hwy))
-```
-
-5. What happens when you make a scatterplot of *class* versus *drv* using mpg data:
-```{r}
-ggplot(data = mpg) +
-  geom_point(mapping = aes(x = class, y = drv))
-```
-
-Is it useful?
-
-## Aesthetic mappings
-
-hwy ~ displ scatter plot tells us that there is linear relationship between engine size and fuel consumption: bigger engines use more fuel and are therefore less efficient.
-Nevertheless, if we look at the cars with huge engines (>5L), it's apparent that there are some outliers (plot below) that perform better than cars in this engine class in general.
-
-What are those cars? Do they have something in common?
-
-```{r}
-ggplot(data = mpg) +
-  geom_point(mapping = aes(x = displ, y = hwy, color = (hwy > 20 & displ > 5)))
-```
-
-To get a clue about the nature of these outliers, we would like add more info present in our mpg dataset to plot. To add more variables to 2D scatterplot, we can use additional aesthetic mappings.
-
-Aesthetics like color, shape, fill, and size can be used to add additional variables to a plot.
-
-Let's map color of the points to class variable in mpg dataset to reveal the class of each car:
-
-```{r}
-ggplot(data = mpg) + 
-  geom_point(mapping = aes(x = displ, y = hwy, color = class))
-```
-
-We can see that most of the cars with large motors with better fuel efficiency belong to sports cars (2seaters).
-
-Let's recreate previous plot with class mapped to size of each point:
-```{r}
-ggplot(data = mpg) + 
-  geom_point(mapping = aes(x = displ, y = hwy, size = class))
-```
-
-Ouch, we get warning... seems its not a good idea. Why?
-What's wrong with the next plot where we have four, let's say diameter, categories ("tiny", "small", "big", "very big") and we want to map size aesthetic to diameter
-```{r}
-ggplot(data = data_frame(x = c(1:4), y = 1, diameter = c("tiny", "small", "big", "very big"))) +
-  geom_point(mapping = aes(x = x, y = y, size = diameter))
-```
-Maybe this plot explains why it's generally not a good idea to map categorical variable to size aesthetic.
-
-## Excercise
-Map **alpha** aesthetic to class:
-```{r}
-ggplot(data = mpg) + 
-  geom_point(mapping = aes(x = displ, y = hwy, alpha = class))
-```
-
-Map **size** aesthetic to class:
-```{r}
-ggplot(data = mpg) + 
-  geom_point(mapping = aes(x = displ, y = hwy, shape = class))
-```
-
-Is everything OK with shapes?
-
-> When you set your aesthetic via mapping, ggplot automatically takes care of the rest: it finds best scale to display selected aesthetic and draws a legend. Note that this happens only when you map aesthetic within aes() function.
- 
-### Set aesthetic manually
-You can change the appearance of your plot also manually: change the color or shape of all the points.
-
-For example, let's suppose you want to make all points in plot blue:
-```{r}
-ggplot(data = mpg) + 
-  geom_point(mapping = aes(x = displ, y = hwy), colour = "blue") # try HEX code "#0000ff" or rgb(0,0,1)
-```
-
-Here, the color is not connected to the variable in your dataset, but just changes the appearance of the plot.
-Therefore, to change the appearance of the plot, you need to assign value to aesthetic **outside** aes() in geom function. 
-
-You just have to pick a value that makes sense for that aesthetic:
-
-- the name/code of the color as a character string ("blue", "#0000ff")
-- size of a point in mm
-- shape of a point as a number
-
-### Shape codes
-While colors and sizes are intuitive, it seems impossible to remember available point shape codes in R. The quickest way out of this is to know how to generate an example plot of the first 25 shapes quickly. Numbers next to shapes denote R shape number.
-
-```{r}
-ggplot(data = data_frame(x = rep(1:5, 5), y = rep(5:1, each = 5), shape = c(0:24))) + 
-  geom_point(mapping = aes(x = x, y = y, shape = shape), fill = "green", color = "blue", size = 3) +
-  geom_text(mapping = aes(x = x, y = y, label = shape), hjust = 1.7) +
-  scale_shape_identity() +
-  theme(axis.text = element_blank(),
-        axis.title = element_blank())
-```
-
-Let's use more than 6 shapes:
-```{r}
-ggplot(data = mpg) + 
-  geom_point(mapping = aes(x = displ, y = hwy, shape = class), position = position_jitter(0.1)) +
-  scale_shape_manual(values = 0:6)
-```
-
-
-Here, we used fill="green", color="blue", to change the appearance of the points, and also adjusted size of the points (size=3) for better visibility. 
-Note the differences how fill and color work on different point shapes! Which is the default point shape in ggplot?
-
-### Excercises
-
-1. What's wrong with this plot? Why are points not blue? Can you fix the code?
-```{r}
-ggplot(data = mpg) +
-  geom_point(mapping = aes(x = displ, y = hwy), color = "blue")
-```
-
-2. Which variables in mpg are categorical? Which variables are continuous? (type ?mpg to read the documentation for the dataset). How can you see when you run mpg?
-```{r}
-mpg
-```
-
-## Homework
-
-3. Map a continuous variable to color, size, and shape. How do these aesthetics behave differently for categorical vs. continuous variables?
-
-4. What happens if you map the same variable to multiple aesthetics?
-
-5. What does the stroke aesthetic do? What shapes does it work with? (Hint: use ?geom_point)
-
-6. What happens if you map an aesthetic to something other than a variable name, like aes(colour = displ < 5)?
-
-# Class II
-
 ## Adding (more) variables by facet_wrap
+
 We used color, shape and alpha (transparency) to display additional subset in a two-dimensional graph. Using different colours allows visual inference of the distribution of the groups under comparison. But there is apparent limit how much of such information can be accommodated onto one graph before it gets too cluttered.
 
-In addition to reducing visual clutter and overplotting, we can use small subplots just as an another way to bring out subsets from our data. Series of small subplots (multiples) use same scale and axes allowing easier comparisons and are considered very efficient design. Fortunately, ggplot has easy way to do this: facet_wrap() and facet_grid() functions split up your dataset and generate multiple small plots arranged in an array. facet_wrap() works with one variable and facet_grid() can use two variables.  
+In addition to reducing visual clutter and overplotting, we can use small subplots just as an another way to bring out subsets from our data. Series of small subplots (multiples) use same scale and axes allowing easier comparisons and are considered very efficient design. Fortunately, ggplot has easy way to do this: facet_wrap() and facet_grid() functions split up your dataset and generate multiple small plots arranged in an array. 
+
+facet_wrap() works with one variable and facet_grid() can use two variables.  
 
 > At the heart of quantitative reasoning is a single question: Compared to what? Small multiple designs.. answer directly by visually enforcing comparisons of changes, of the differences among objects, of the scope of alternatives. For a wide range of problems in data presentation, small multiples are the best design solution. Edward Tufte (Envisioning Information, p. 67).
 
+```{r}
+library(tidyverse)
+```
+
 Here, we plot each class of cars on a separate subplot and we arrange plots into 2 rows:
 ```{r}
-ggplot(data = mpg) + 
-  geom_point(mapping = aes(x = displ, y = hwy)) + 
-  facet_wrap("class", nrow = 2)
+ggplot(data = mpg) +
+  geom_point(mapping = aes(x = displ, y = hwy)) +
+  facet_wrap("class")
 ```
 
 To plot combination of two variables, we use facet_grid():
@@ -291,9 +50,27 @@ ggplot(data = mpg) +
 ```{r}
 ggplot(data = mpg) + 
   geom_point(mapping = aes(x = displ, y = hwy)) + 
-  facet_grid(drv ~ cyl, scales = "free")
+  facet_grid(drv ~ cyl, scales = "free_y")
 ```
 
+```{r}
+ggplot(data = mpg) + 
+  geom_point(mapping = aes(x = displ, y = hwy)) + 
+  facet_grid(drv ~ cyl, scales = "free_x")
+```
+
+
+```{r}
+ggplot(data = mpg) + 
+  geom_point(mapping = aes(x = displ, y = hwy)) + 
+  facet_grid(drv ~ cyl, scales = "free") # free scale for both: x and y axis
+```
+
+```{r}
+ggplot(data = mpg) + 
+  geom_point(mapping = aes(x = displ, y = hwy)) + 
+  facet_wrap("drv", scales = "free_y")
+```
 
 
 ## Exercises
@@ -309,7 +86,7 @@ ggplot(data = mpg) +
   geom_point(mapping = aes(x = displ, y = hwy)) + 
   facet_wrap(~ displ)
 ```
-Each raw value is contverted to categorical value and gets its own facet?
+Each raw value is converted to categorical value and gets its own facet?
 
 2. What do the empty cells in plot with facet_grid(drv ~ cyl) mean? How do they relate to this plot?
 ```{r}
@@ -328,10 +105,35 @@ ggplot(data = mpg) +
   facet_grid(. ~ cyl)
 ```
 
-4. Read ?facet_wrap. What does nrow do? What does ncol do? What other options control the layout of the individual panels? Why doesn't facet_grid() have nrow and ncol argumentt.
+4. Read ?facet_wrap. What does nrow do? What does ncol do? What other options control the layout of the individual panels? Why doesn't facet_grid() have nrow and ncol argument.
+
+```{r}
+?facet_wrap
+```
+
+
+```{r}
+ggplot(data = mpg) + 
+  geom_point(mapping = aes(x = displ, y = hwy)) +
+  facet_wrap(~ cyl, nrow = 2, ncol = 3)
+```
 
 
 5. When using facet_grid() you should usually put the variable with more unique levels in the columns. Why?
+
+```{r}
+ggplot(data = mpg) + 
+  geom_point(mapping = aes(x = displ, y = hwy)) + 
+  facet_grid(drv ~ cyl)
+```
+
+Not endorsed?
+```{r}
+ggplot(data = mpg) + 
+  geom_point(mapping = aes(x = displ, y = hwy)) + 
+  facet_grid(cyl ~ drv)
+```
+
 
 ## Geometric objects aka geoms
 To change the geom in your plot, change the __geom function__ that you add to ggplot(). 
@@ -355,11 +157,12 @@ However, note that __not every aesthetic works with every geom.__
 - You could set the shape of a point, but you couldn't set the "shape" of a line. 
 - On the other hand, you could set the linetype of a line. 
 
-We can tweak the above plot by mapping each type of drivetrain (drv) to different linetype.
+We can tweak the above plot by mapping each type of drive (drv) to different linetype.
 
 ```{r}
 ggplot(data = mpg) + 
-  geom_smooth(mapping = aes(x = displ, y = hwy, linetype = drv))
+  geom_smooth(mapping = aes(x = displ, y = hwy, linetype = drv, color = drv)) +
+  scale_color_manual(values = viridisLite::viridis(3))
 ```
 
 Here, 4 stands for four-wheel drive, f for front-wheel drive, and r for rear-wheel drive. 
