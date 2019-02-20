@@ -21,6 +21,7 @@ facet_wrap() works with one variable and facet_grid() can use two variables.
 
 ```{r}
 library(tidyverse)
+library(here)
 ```
 
 Here, we plot each class of cars on a separate subplot and we arrange plots into 2 rows:
@@ -433,9 +434,9 @@ Try to make this plot without flipping... x-axis labels are a mess!
 - coord_quickmap() sets the aspect ratio correctly for maps. This is very important if you’re plotting spatial data with ggplot2.
 
 ```{r}
-# install.packages("sp")
+# install.packages("sf")
 # level 0 map data was downloaded from http://www.gadm.org/country
-est <- read_rds("data/EST_adm0.rds")
+est <- read_rds(here("data", "gadm36_EST_0_sp.rds"))
 ggplot(est, aes(long, lat, group = group)) +
   geom_polygon(fill = "white", colour = "black")
 
