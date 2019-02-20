@@ -65,7 +65,9 @@ We put displ on the x-axis and hwy on the y-axis:
 ```
 
 
-If plot creation is successful, you can see negative relationship between engine size and fuel consumption (miles per gallon). It's probably no news to anyone that cars with big engines use more fuel.
+If plot creation is successful, you can see negative relationship between engine size and fuel consumption (miles per gallon). 
+
+It's probably no news to anyone that cars with big engines use more fuel.
 
 ## Composing a ggplot
 
