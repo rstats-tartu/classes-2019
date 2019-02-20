@@ -1,5 +1,0 @@
-
-git checkout --track origin/class-three
-git checkout --patch class-three 02-visualisation.Rmd
-
-enter a # a - stage this hunk and all later hunks in the file
