@@ -21,6 +21,7 @@ facet_wrap() works with one variable and facet_grid() can use two variables.
 
 ```{r}
 library(tidyverse)
+library(here)
 ```
 
 Here, we plot each class of cars on a separate subplot and we arrange plots into 2 rows:
@@ -435,6 +436,7 @@ Try to make this plot without flipping... x-axis labels are a mess!
 ```{r}
 # install.packages("sp")
 # level 0 map data was downloaded from http://www.gadm.org/country
+# https://biogeo.ucdavis.edu/data/gadm3.6/Rsp/gadm36_EST_0_sp.rds
 est <- read_rds("data/EST_adm0.rds")
 ggplot(est, aes(long, lat, group = group)) +
   geom_polygon(fill = "white", colour = "black")
