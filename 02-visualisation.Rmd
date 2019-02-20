@@ -1,7 +1,7 @@
 ---
 title: "ggplot: beyond dotplots"
 author: "Taavi Päll"
-date: "2018-09-24"
+date: "2019-03-08"
 output: github_document
 ---
 
