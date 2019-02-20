@@ -1,8 +1,8 @@
 ---
 title: "ggplot: beyond dotplots"
 author: "Taavi Päll"
-date: "24 9 2018"
-output: html_document
+date: "2018-09-24"
+output: github_document
 ---
 
 ```{r setup, include=FALSE}
@@ -288,9 +288,13 @@ The algorithm used to calculate new values for a graph is called a stat, short f
 
 You can learn which stat a geom uses by inspecting the default value for the stat argument in geom_ function. 
 
-For example, ?geom_bar shows that the default value for stat is "count".
+For example, ?geom_bar shows that the default value for stat is "count":
 
-![geom_bar](plots/stat_count.png)
+```
+geom_bar(mapping = NULL, data = NULL, stat = "count",
+  position = "stack", ..., width = NULL, binwidth = NULL, na.rm = FALSE,
+  show.legend = NA, inherit.aes = TRUE)
+```
 
 You can use geoms and stats interchangeably. For example, you can recreate the previous plot using stat_count() instead of geom_bar():
 ```{r}
@@ -434,15 +438,18 @@ Try to make this plot without flipping... x-axis labels are a mess!
 - coord_quickmap() sets the aspect ratio correctly for maps. This is very important if you’re plotting spatial data with ggplot2.
 
 ```{r}
-# install.packages("sf")
+# install.packages("sp")
 # level 0 map data was downloaded from http://www.gadm.org/country
-est <- read_rds(here("data", "gadm36_EST_0_sp.rds"))
+# https://biogeo.ucdavis.edu/data/gadm3.6/Rsp/gadm36_EST_0_sp.rds
+est <- read_rds(here("data/gadm36_EST_0_sp.rds"))
 ggplot(est, aes(long, lat, group = group)) +
-  geom_polygon(fill = "white", colour = "black")
+  geom_polygon(fill = "white", colour = "black") +
+  labs(title = "Unadjusted (inappropriate) lat/lon ratio")
 
 ggplot(est, aes(long, lat, group = group)) +
   geom_polygon(fill = "white", colour = "black") +
-  coord_quickmap()
+  coord_quickmap() +
+  labs(title = "Adjusted lat/lon aspect ratio")
 ```
 
 ### Excercises
