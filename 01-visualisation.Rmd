@@ -1,7 +1,7 @@
 ---
 title: "Data visualisation using ggplot2"
 author: "Taavi Päll"
-date: "2018-09-25"
+date: "2019-03-04"
 output: github_document
 ---
 
@@ -9,12 +9,16 @@ output: github_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-Here we get started with R from the standpoint of visualisation. 
-We learn how to make basic scatterplot and how to map variables to point color, size, or shape.
+We start learning R from data visualisation. 
+
+Here we learn:    
+
+- how to make basic scatterplot and 
+- how to map variables to point color, size, or shape.
 
 ## Sources
 
-- This tutorial is heavily based on "Data visualisation with ggplot2" chapter in [R4DS](http://r4ds.had.co.nz/data-visualisation.html) by G. Grolemund and H. Wickham.
+- This tutorial is based on "Data visualisation with ggplot2" chapter in [R4DS](http://r4ds.had.co.nz/data-visualisation.html) by G. Grolemund and H. Wickham.
 - [lectures/graafilised-lahendused](https://rstats-tartu.github.io/lectures/graafilised-lahendused.html) and [learn-r/ggplot2](https://tpall.github.io/learn-r/#ggplot2) by Ülo Maiväli and Taavi Päll
 
 ## ggplot2
@@ -53,15 +57,15 @@ For us, key variables in mpg dataset are:
 ## Creating a ggplot
 
 Simple scatter plot to explore relationship between fuel consumption in highway traffic (hwy) and engine size (displ) is created like this.
-Here we put displ on the x-axis and hwy on the y-axis:
+
+We put displ on the x-axis and hwy on the y-axis:
 
 ```{r}
-ggplot(data = mpg) +
-  geom_point(mapping = aes(x = displ, y = hwy))
+
 ```
 
 
-Here you can see negative relationship between engine size and fuel consumption. It's probably no news to anyone that cars with big engines guzzle more fuel.
+If plot creation is successful, you can see negative relationship between engine size and fuel consumption (miles per gallon). It's probably no news to anyone that cars with big engines use more fuel.
 
 ## Composing a ggplot
 
