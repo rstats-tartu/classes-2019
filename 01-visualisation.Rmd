@@ -56,7 +56,7 @@ For us, key variables in mpg dataset are:
 
 ## Creating a ggplot
 
-Simple scatter plot to explore relationship between fuel consumption in highway traffic (hwy) and engine size (displ) is created like this.
+Let's create simple scatter plot to explore relationship between fuel consumption in highway traffic (hwy) and engine size (displ) is created like this.
 
 We put displ on the x-axis and hwy on the y-axis:
 
