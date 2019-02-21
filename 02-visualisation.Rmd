@@ -9,91 +9,107 @@ output: github_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
+
+- Using small multiples to compare observations from groups -- facetting
+- Using different plot types and elements with geoms
+- On the fly statistical transformations to plot summaries
+- Placing bars side by side
+- Coordinate systems to plot maps
+
+
 ## Adding (more) variables by facet_wrap
 
-We used color, shape and alpha (transparency) to display additional subset in a two-dimensional graph. Using different colours allows visual inference of the distribution of the groups under comparison. But there is apparent limit how much of such information can be accommodated onto one graph before it gets too cluttered.
+We used color, shape and alpha (transparency) to display additional subset in a two-dimensional graph. 
 
-In addition to reducing visual clutter and overplotting, we can use small subplots just as an another way to bring out subsets from our data. Series of small subplots (multiples) use same scale and axes allowing easier comparisons and are considered very efficient design. Fortunately, ggplot has easy way to do this: facet_wrap() and facet_grid() functions split up your dataset and generate multiple small plots arranged in an array. 
+Using different colors allows visual inference of the distribution of the groups under comparison. But there is apparent limit how much of such information can be accommodated onto one graph before it gets too cluttered.
+
+In addition to reducing visual clutter and overplotting, we can use small subplots to bring out subsets from our data. 
+
+Series of small subplots (multiples) use same scale and axes allowing easier comparisons. 
+
+Ggplot has easy way to do this: facet_wrap() and facet_grid() functions split up your dataset and generate multiple small plots arranged in an array. 
 
 facet_wrap() works with one variable and facet_grid() can use two variables.  
 
-> At the heart of quantitative reasoning is a single question: Compared to what? Small multiple designs.. answer directly by visually enforcing comparisons of changes, of the differences among objects, of the scope of alternatives. For a wide range of problems in data presentation, small multiples are the best design solution. Edward Tufte (Envisioning Information, p. 67).
+> At the heart of quantitative reasoning is a single question: Compared to what? Small multiple designs.. answer directly by visually enforcing comparisons of changes, of the differences among objects, of the scope of alternatives. For a wide range of problems in data presentation, small multiples are the best design solution. Edward Tufte (Edward Tufte, Envisioning Information, p. 67).
 
 ```{r}
 library(tidyverse)
 library(here)
 ```
 
-Here, we plot each class of cars on a separate subplot and we arrange plots into 2 rows:
+
+Using mpg dataset, we **plot each class of cars on a separate subplot** and we arrange plots into 2 rows:
 ```{r}
 ggplot(data = mpg) +
   geom_point(mapping = aes(x = displ, y = hwy)) +
-  facet_wrap("class")
+  facet_wrap("class", nrow = 2)
 ```
 
-To plot combination of two variables, we use facet_grid():
+
+To plot combination of two variables drv and cyl, we use facet_grid():
 ```{r}
-ggplot(data = mpg) + 
-  geom_point(mapping = aes(x = displ, y = hwy)) + 
-  facet_grid(drv ~ cyl)
+
 ```
 
-Note that the variables, used for splitting up data and arranging facets row and column-wise, are specified in facet_grid() by formula: facet_grid(rows ~ columns).
+
+- Note that the variables, used for splitting up data and arranging facets row and column-wise, are specified in facet_grid() by formula: facet_grid(rows ~ columns).
+- Also note that y axis limits are same in all facets
+
 
 If you want to omit rows or columns in facet_grid() use `. ~ var` or `var ~ .`, respectively.
 ```{r}
-ggplot(data = mpg) + 
-  geom_point(mapping = aes(x = displ, y = hwy)) + 
-  facet_grid(. ~ cyl)
+
 ```
 
+We can have separate y or x axis axis limits for row or column variables, respectively, by setting scales argument to "free_y" or "free_x".
+
+free_y:
+```{r}
+
+```
+
+free_x:
+```{r}
+
+```
+
+We can also set both axes to "free":
 
 ```{r}
-ggplot(data = mpg) + 
-  geom_point(mapping = aes(x = displ, y = hwy)) + 
-  facet_grid(drv ~ cyl, scales = "free_y")
+
 ```
 
+
+Scales argument works also with facet_rap():
 ```{r}
-ggplot(data = mpg) + 
-  geom_point(mapping = aes(x = displ, y = hwy)) + 
-  facet_grid(drv ~ cyl, scales = "free_x")
+
 ```
 
 
-```{r}
-ggplot(data = mpg) + 
-  geom_point(mapping = aes(x = displ, y = hwy)) + 
-  facet_grid(drv ~ cyl, scales = "free") # free scale for both: x and y axis
-```
-
-```{r}
-ggplot(data = mpg) + 
-  geom_point(mapping = aes(x = displ, y = hwy)) + 
-  facet_wrap("drv", scales = "free_y")
-```
-
-
-## Exercises
+### Exercises
 1. What happens if you facet on a continuous variable?
 
+
+First, identify continuous variable from mpg dataset:
 ```{r}
 mpg
 ```
 
 
+Make hwy versus displ scatterplot where facets are mapped to continuous variable:
 ```{r}
-ggplot(data = mpg) + 
-  geom_point(mapping = aes(x = displ, y = hwy)) + 
-  facet_wrap(~ displ)
+
 ```
 Each raw value is converted to categorical value and gets its own facet?
+
 
 2. What do the empty cells in plot with facet_grid(drv ~ cyl) mean? How do they relate to this plot?
 ```{r}
 ggplot(data = mpg) + 
   geom_point(mapping = aes(x = drv, y = cyl))
 ```
+
 
 3. What plots does the following code make? What does . do?
 ```{r}
@@ -105,6 +121,7 @@ ggplot(data = mpg) +
   geom_point(mapping = aes(x = displ, y = hwy)) +
   facet_grid(. ~ cyl)
 ```
+
 
 4. Read ?facet_wrap. What does nrow do? What does ncol do? What other options control the layout of the individual panels? Why doesn't facet_grid() have nrow and ncol argument.
 
@@ -120,23 +137,8 @@ ggplot(data = mpg) +
 ```
 
 
-5. When using facet_grid() you should usually put the variable with more unique levels in the columns. Why?
+## Geometric objects -- geoms
 
-```{r}
-ggplot(data = mpg) + 
-  geom_point(mapping = aes(x = displ, y = hwy)) + 
-  facet_grid(drv ~ cyl)
-```
-
-Not endorsed?
-```{r}
-ggplot(data = mpg) + 
-  geom_point(mapping = aes(x = displ, y = hwy)) + 
-  facet_grid(cyl ~ drv)
-```
-
-
-## Geometric objects aka geoms
 To change the geom in your plot, change the __geom function__ that you add to ggplot(). 
 
 For instance, to create already familiar dot plot use geom_point():
@@ -151,6 +153,7 @@ ggplot(data = mpg) +
   geom_smooth(mapping = aes(x = displ, y = hwy))
 ```
 
+
 Every geom function in ggplot2 takes a mapping argument. 
 
 However, note that __not every aesthetic works with every geom.__
@@ -161,16 +164,16 @@ However, note that __not every aesthetic works with every geom.__
 We can tweak the above plot by mapping each type of drive (drv) to different linetype.
 
 ```{r}
-ggplot(data = mpg) + 
-  geom_smooth(mapping = aes(x = displ, y = hwy, linetype = drv, color = drv)) +
-  scale_color_manual(values = viridisLite::viridis(3))
+
 ```
 
-Here, 4 stands for four-wheel drive, f for front-wheel drive, and r for rear-wheel drive. 
+Plot legend, "4" stands for four-wheel drive, "f" for front-wheel drive, "r" for rear-wheel drive. 
 
 Four-wheel cars are mapped to "solid" line, front-wheel cars to "dashed" line, and rear-wheel cars to "longdash" line. 
 
+
 For more linetypes and their numeric codes please have a look at R cookbook: http://www.cookbook-r.com/Graphs/Shapes_and_line_types/.
+
 
 Currently, ggplot2 provides over 40 geoms:
 ```{r}
@@ -180,60 +183,59 @@ gg2[grep("^geom", gg2)]
 
 To learn more about any single geom, use help, like: ?geom_smooth.
 
-Many geoms, like __geom_smooth(), use a single geometric object to display multiple rows of data__. For these geoms, __you can set the group aesthetic to a categorical variable to draw multiple objects__. 
+### group aesthetic
 
-Note that in case of the group aesthetic ggplot2 does not add a legend or distinguishing features to the geoms. 
-
-You can plot for example all your bootstrapped linear model fits on one plot to visualize uncertainty, whereas all these lines are of the same color/type.
+> Many geoms, like geom_smooth(), use a single geometric object to display multiple rows of data. For these geoms, you can set the "group" aesthetic to a categorical variable to draw multiple objects. 
 
 ```{r}
 ggplot(data = mpg) +
-  geom_smooth(mapping = aes(x = displ, y = hwy, group = drv))
+  geom_smooth(mapping = aes(x = displ, y = hwy, group = drv)) +
+  labs(caption = "Note that in case of the 'group' aesthetic ggplot2 does not add a legend or distinguishing features to the geoms. ")
 ```
+
 
 Other aestheic mappings (color, alpha etc) similarily group your data for display but also add by default legend to the plot. To hide legend, set show.legend to FALSE:
+
 ```{r}
 ggplot(data = mpg) +
-  geom_smooth(
-    mapping = aes(x = displ, y = hwy, color = drv),
-    show.legend = FALSE
-  )
+  geom_smooth(mapping = aes(x = displ, y = hwy, color = drv))
 ```
 
-To display multiple geoms in the same plot, add multiple geom functions to ggplot():
+### Multiple geoms
+
+To display multiple geoms in the same plot, add multiple geom functions to ggplot(), each geom can have her own aesthetic:
+
 ```{r}
-ggplot(data = mpg) + 
-  geom_point(mapping = aes(x = displ, y = hwy)) +
-  geom_smooth(mapping = aes(x = displ, y = hwy))
+
 ```
+
 
 Probably you notice, that if we go with aethetic mappings as we used to, by specifing them within geom function, we introduce some code duplication. This can be easily avoided by moving aes() part from geom_ to the ggplot():
+
 ```{r}
-ggplot(data = mpg, mapping = aes(x = displ, y = hwy)) + 
-  geom_point() +
-  geom_smooth()
+
 ```
 
 Now, ggplot2 uses this mapping globally in all geoms.
+  
+> If you place mappings in a geom function, ggplot2 will treat them as local mappings for the layer. It will use these mappings to extend or overwrite the global mappings for that layer only. This way it's possible to use different aesthetics in different layers (for example, if you wish to plot model fit over data points).
 
-If you place mappings in a geom function, ggplot2 will treat them as local mappings for the layer. It will use these mappings to extend or overwrite the global mappings for that layer only. This way it's possible to use different aesthetics in different layers (for example, if you wish to plot model fit over data points).
-
-Here, we map color to the class of cars, whereas geom_smooth still plots only one line:
+Here, we create displ~hwy scatterplot with loess smooth line fitted trough all point, additionally we map color to the class of cars (whereas geom_smooth still plots only one line):
 ```{r}
-ggplot(data = mpg, mapping = aes(x = displ, y = hwy)) + 
-  geom_point(mapping = aes(color = class)) + 
-  geom_smooth()
+
 ```
 
-Importantly, you can use the same idea to specify different data for each layer: 
+
+**Importantly, you can use the same idea to specify different data for each layer**, let's plot only loess smooth for subcompact class of cars: 
 ```{r}
-ggplot(data = mpg, mapping = aes(x = displ, y = hwy)) + 
-  geom_point(mapping = aes(color = class)) + 
-  geom_smooth(data = filter(mpg, class == "subcompact"), se = FALSE)
+
 ```
+
+
 Above, our smooth line displays just a subset of the mpg dataset, the subcompact cars. The local data argument in geom_smooth() overrides the global data argument in ggplot() for that layer only.
 
-## Exercises
+
+### Exercises
 
 1. What geom would you use to draw a line chart? A boxplot? A histogram? An area chart?
 
@@ -259,6 +261,7 @@ ggplot() +
   geom_smooth(data = mpg, mapping = aes(x = displ, y = hwy))
 ```
 
+
 ## Plotting statistical transformations - bar graph tricks
 
 Bar graphs are special among ggplot geoms. This is because by default they do some calculations with data before plotting. To get an idea, please have a look at the following bar graph, created by geom_bar() function. 
@@ -282,11 +285,11 @@ Other graphs, like bar charts, calculate new values to plot:
 
 - smoothers fit a model to your data and then plot predictions from the model.
 
-- boxplots compute a robust summary of the distribution and then display a specially formatted box.
+- boxplots compute a 5-number summary of the distribution and then display a specially formatted box.
 
-The algorithm used to calculate new values for a graph is called a stat, short for statistical transformation.
+The algorithm used to calculate new values for a graph is called a "stat", short for statistical transformation.
 
-You can learn which stat a geom uses by inspecting the default value for the stat argument in geom_ function. 
+> You can learn which stat a geom uses by inspecting the default value for the stat argument in geom_ function. 
 
 For example, ?geom_bar shows that the default value for stat is "count":
 
@@ -297,34 +300,39 @@ geom_bar(mapping = NULL, data = NULL, stat = "count",
 ```
 
 You can use geoms and stats interchangeably. For example, you can recreate the previous plot using stat_count() instead of geom_bar():
+
 ```{r}
 ggplot(data = diamonds) + 
   stat_count(mapping = aes(x = cut))
 ```
 
+
 This works because every geom has a default stat; and every stat has a default geom, meaning that you can use geoms without worrying about its underlying statistical transformation.
 
 There are three cases when you might want to specify stat explicitly:
 
-1. You might want to override the default stat. For example you have alredy summarised counts or means or whatever, then you need to change the default stat in geom_bar() to "identity":
+1. You might want to override the default stat. For example you have already summarised counts or means or whatever, then you need to change the default stat in geom_bar() to "identity":
 Let's create summarized dataset (don't worry about this code yet, we are going to this in the next classes):
 ```{r}
 diamonds_summarised <- diamonds %>% 
   group_by(cut) %>% 
-  summarise(N = n())
+  count()
 diamonds_summarised
 ```
 
 Here we (re)create diamond counts plot using summary data. Note that here we need to use also y-aesthetic!
 ```{r}
-ggplot(data = diamonds_summarised) +
-  geom_bar(mapping = aes(x = cut, y = N), stat = "identity")
+ggplot(data = diamonds_summarised)
 ```
 
 2. You might want to override the default mapping from transformed variables to aesthetics. For example, you might want to display a bar chart of proportion, rather than count:
+
+To get proportions onto y axis we can use prop function or count function, note that we need to decorate these functions with double dots around function name (..prop..), as otherwise ggplot thinks it's a variable name in your data.
+
+We also need to set "group = 1" to get relative proportions of categories in our dataset.
+
 ```{r}
-ggplot(data = diamonds) + 
-  geom_bar(mapping = aes(x = cut, y = ..prop.., group = 1))
+
 ```
 
 To find the variables computed by the stat, look for the help section titled "computed variables".
@@ -353,13 +361,10 @@ ggplot(data = diamonds) +
 
 If you want to use mean +/- SD like this, you need mean_sdl() function from Hmisc package (meaning, that you need to install Hmisc).
 
-### Homework 2
 
+## Position adjustments - how to get bars side-by-side
 
-
-## Position adjustments - how to get those bars side-by-side
-
-There is more you need to know about bar charts. You can easily update diamonds cut counts by mapping cut additonally either to color or fill (whereas fill seems to be more useful):
+There is more you need to know about bar charts. You can easily update diamonds cut counts by mapping cut additionally either to color or fill (whereas fill seems to be more useful):
 ```{r}
 ggplot(data = diamonds) + 
   stat_count(mapping = aes(x = cut, fill = cut))
@@ -374,7 +379,9 @@ ggplot(data = diamonds) +
 
 Wow, bars are automatically __stacked__ showing the proportions of different diamond clarity classes within cut quality classes.
 
-If you want to get these stacked bars side-by-side, you need to change the __position adjustment__ argument, which is set to "stacked" by default. There are three other options: "identity", "dodge" and "fill".
+If you want to get these stacked bars side-by-side, you need to change the __position adjustment__ argument, which is set to "stacked" by default. 
+
+> There are three other options: "identity", "dodge" and "fill".
 
 - position = "identity" will place each object exactly where it falls in the context of the graph. Its generally not useful with bar graphs, as all bars are behind each other and this plot can be easily mixed up with position = "stacked":
 ```{r}
@@ -382,7 +389,6 @@ ggplot(data = diamonds) +
   stat_count(mapping = aes(x = cut, fill = clarity), position = "identity")
 ```
 
-Position "stacked" is naturally default in scatterplot. 
 
 - position = "fill" works like stacking, but makes each set of stacked bars the same height. This makes it easier to compare proportions across groups.
 
@@ -398,13 +404,13 @@ ggplot(data = diamonds) +
   geom_bar(mapping = aes(x = cut, fill = clarity), position = "dodge")
 ```
 
-There is another position adjustment function for scatterplots that helps mitigate overplotting: position = "jitter":
+There is another position adjustment function for scatterplots that helps to deal with overplotting: position = "jitter":
 ```{r}
 ggplot(data = mpg) +
   geom_point(mapping = aes(x = displ, y = hwy), position = "jitter")
 ```
 
-"jitter" adds small amount of random noise to your raw data, so that each point gets moved away from its original position. This way you can reveal very similar data points that fall into same place in plot grid.
+> "jitter" adds small amount of random noise to your raw data, so that each point gets moved away from its original position. This way you can reveal very similar data points that fall into same place in plot grid.
 
 To learn more about a position adjustment, look up the help page associated with each adjustment: ?position_dodge, ?position_fill, ?position_identity, ?position_jitter, and ?position_stack.
 
@@ -420,37 +426,51 @@ ggplot(data = mpg, mapping = aes(x = cty, y = hwy)) +
 
 3. What’s the default position adjustment for geom_boxplot()? Create a visualisation of the mpg dataset that demonstrates it.
 
-## Coordinate systems - flip your plot
+
+## Coordinate systems
+
+### Flipping your plot
 
 The default coordinate system of ggplot2 is the Cartesian coordinate system where the x and y positions act independently to determine the location of each point. 
 
 There are a number of other coordinate systems that are occasionally helpful.
 
 - coord_flip() witches the x and y axes. This is useful if you want horizontal boxplots. It's also very useful for long labels: it's hard to get them to fit without overlapping on the x-axis.
+
 ```{r}
 ggplot(data = mpg, mapping = aes(x = class, y = hwy)) + 
-  geom_boxplot() +
-  coord_flip()
+  geom_boxplot()
 ```
 
-Try to make this plot without flipping... x-axis labels are a mess! 
+Without flipping, long x-axis labels can be a mess! 
+
+
+### Maps
 
 - coord_quickmap() sets the aspect ratio correctly for maps. This is very important if you’re plotting spatial data with ggplot2.
 
+We import shapefile of Estonia, that we downloaded from http://www.gadm.org/country as level 0 (less features) map data (https://biogeo.ucdavis.edu/data/gadm3.6/Rsp/gadm36_EST_0_sp.rds).
 ```{r}
-# install.packages("sp")
-# level 0 map data was downloaded from http://www.gadm.org/country
-# https://biogeo.ucdavis.edu/data/gadm3.6/Rsp/gadm36_EST_0_sp.rds
+# You need to have sp package /install.packages("sp")/
 est <- read_rds(here("data/gadm36_EST_0_sp.rds"))
-ggplot(est, aes(long, lat, group = group)) +
-  geom_polygon(fill = "white", colour = "black") +
-  labs(title = "Unadjusted (inappropriate) lat/lon ratio")
+```
 
+First, map with unadjusted coordinates:
+```{r}
 ggplot(est, aes(long, lat, group = group)) +
-  geom_polygon(fill = "white", colour = "black") +
+  geom_polygon(fill = "white", color = "black") +
+  labs(title = "Unadjusted (inappropriate) lat/lon ratio")
+```
+
+
+Then properly adjusted coordinates:
+```{r}
+ggplot(est, aes(long, lat, group = group)) +
+  geom_polygon(fill = "white", color = "black") +
   coord_quickmap() +
   labs(title = "Adjusted lat/lon aspect ratio")
 ```
+
 
 ### Excercises
 
