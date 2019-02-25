@@ -1,0 +1,298 @@
+---
+title: "Data transformation using dplyr (aka five verbs) 2"
+author: "Taavi Päll"
+date: "2018-10-16"
+output: github_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Load tidyverse library and dataset:
+```{r}
+library(tidyverse)
+```
+
+## Add new variables with mutate()
+Mutate creates new variables (columns) from existing variables (columns). Mutate is used to do calculations columnwise.
+
+To start illustrating what mutate does, let's have a look at the changes of real estate prices in transactions data. 
+
+In Estonia, real estate market collapsed after 2008 economic crisis. In 2017, various sources started talking about the new bubble. Are we really near the bubble? We can start elucidating this by looking at the price dynamics.
+
+First, select smaller subset of columns: year to count, median price per unit area (ends with median) and consumer index.
+let's put year and month in to the begginning:
+```{r}
+(median_price <- select(transactions, date, year, month, county, area, count, matches("(median|index)$")))
+```
+
+Let's make a quick plot using Harjumaa data. 
+
+
+## You can skip this part if date column is present in data
+Oh, but we want to have time on the x axis. Whereas we have year and month columns in our dataset and these are not in the format that is recognised as time...
+
+We need to convert year and month to time format in the form "2005 Jan" or something..
+
+We are going to use ymd() function from tidyverse lubridate library. ymd recognizes several types of year-month-day strings (like "2018-04-09", "2018 04 09", etc) and converts them to date class. We just have to add also place holder for day for this function to work. We would set day to 1, as first day of month.
+
+First, we construct date string with paste() and then convert this string to date. Note that we can refer to columns that we've just created:
+
+```{r}
+paste("a", "b", "foo", sep = "-")
+paste0("a", "b", "foo")
+```
+
+
+```{r}
+library(lubridate)
+```
+
+
+## Plot Harju maakond data
+
+Let's plot price trend using median price per $m^2$ (area_price_median)
+```{r}
+median_price %>% 
+  filter(county == "Harju maakond") %>% 
+  ggplot() +
+  geom_line(aes(x = date, y = area_price_median, color = area))  
+```
+
+You can check if x = time_string works in ggplot.
+
+We can see that in "Harju maakond" and "Tartu maakond" the nominal prices are reaching again the levels before the economic crisis. The question is, whether there is still some room to growth?
+
+We can try to answer this question by bringing in also the inflation that helps to understand the real prices. We can adjust prices for inflation by normalizing them with consumer index. Luckily our transactions dataset already contains consumer indices as percent relative to year 2005 (code used to create this dataset is available in file "data-raw/download-apartment-data.R").
+
+Consumer index is expressed as percent relative to year 2005, first we need to convert price_index to proportions and then we can calculate adjusted prices, like so:
+```{r}
+(median_price <- mutate(median_price, index = price_index / 100,
+                        adj_area_price = area_price_median / index))
+```
+
+mutate works on vectors!
+
+
+Plot out adjusted prices:
+```{r}
+median_price %>% 
+  filter(county == "Harju maakond") %>% 
+  ggplot() +
+  geom_line(aes(x = date, y = adj_area_price, color = area))  
+```
+
+As we can see, based on real values, there was still some potential for growth in 2018. 
+
+What happened in other counties?
+```{r}
+median_price %>% 
+  ggplot() +
+  geom_line(aes(x = date, y = adj_area_price, color = area)) +
+  facet_wrap(~ county)
+```
+
+You can keep only newly created variable by using transmute() function:
+```{r}
+only_adj_price <- transmute(median_price, adj_area_price2 = area_price_median / index)
+```
+
+What plot can we create with this one column?
+```{r}
+ggplot(data = only_adj_price) +
+  geom_histogram(mapping = aes(adj_area_price2), bins = 30) +
+  scale_x_log10()
+```
+
+
+
+## Useful creation functions
+
+There are many functions for creating new variables that you can use with mutate(). 
+
+> The key property is that the function must be vectorised: it must take a vector of values as input, return a vector with the same number of values as output. 
+
+Some of the functions are familiar from base R class: 
+- Arithmetic operators: +, -, *, /, ^.
+
+Arithmetic operators are also useful in conjunction with the aggregate functions. For example, x / sum(x) calculates the proportion of a total, and y - mean(y) computes the difference from the mean.
+
+Let's calculate proportion of transactions per apartement and month and county
+```{r}
+transactions %>% 
+  mutate(prop = count / sum(count, na.rm = TRUE)) %>% 
+  select(date:count, prop)
+```
+
+
+- Modular arithmetic: %/% (integer division) and %% (remainder, modulus), where x == y * (x %/% y) + (x %% y). Modular arithmetic is a handy tool because it allows you to break integers up into pieces. For example, in the tidyverse flights dataset, you can compute hour and minute from dep_time with:
+
+To demonstrate modulo and integer division, let's quickly introduce new dataset:
+```{r}
+library(nycflights13)
+flights
+```
+
+Here we are, modulo and integer arithmetic operators to wrangle data, note the use of transmute:
+```{r}
+transmute(flights,
+  dep_time,
+  hour = dep_time %/% 100,
+  minute = dep_time %% 100
+)
+```
+
+- Logs: log(), log2(), log10(). Note that log() converts to natural logarithm.
+
+To demonstrate logs in action, we can look at the prices. Seems that they are not normally distributed... and most of the values are concentrated at the left side.
+```{r}
+ggplot(data = transactions) +
+  geom_histogram(mapping = aes(x = price_max))
+```
+
+We can have better look at the distibution by using log transformaton.
+```{r}
+price <- mutate(transactions, price_max_log = log10(price_max))
+ggplot(data = price) +
+  geom_histogram(mapping = aes(x = price_max_log))
+```
+
+
+```{r}
+log(0 + 0.01)
+```
+
+
+- Offsets: lead() and lag() allow you to refer to leading or lagging values. This allows you to compute running differences (e.g. x - lag(x)) or find when values change (x != lag(x)).
+
+```{r}
+(x <- 1:10)
+lag(x)
+?lag
+lead(x)
+```
+
+- Cumulative and rolling aggregates: R provides functions for running sums, products, mins and maxes: cumsum(), cumprod(), cummin(), cummax(); 
+and dplyr provides cummean() for cumulative means.
+
+```{r}
+cumsum(x)
+cummean(x)
+```
+
+- Ranking: there are a number of ranking functions, but you should start with min_rank(). It does the most usual type of ranking (e.g. 1st, 2nd, 2nd, 4th).
+
+```{r}
+(y <- c(1, 2, 2, NA, 3, 4))
+min_rank(y)
+min_rank(desc(y))
+```
+
+There are also row_number(), dense_rank(), percent_rank(), cume_dist(), ntile():
+```{r}
+row_number(y)
+dense_rank(y)
+percent_rank(y)
+cume_dist(y)
+```
+
+### Exercises
+
+- Currently dep_time and sched_dep_time are convenient to look at, but hard to compute with because they're not really continuous numbers. Convert them to a more convenient representation of number of minutes since midnight.
+
+```{r}
+flights
+```
+
+
+## Grouped summaries with summarise()
+
+The last key verb is summarise(). It collapses a data frame to a single row:
+```{r}
+summarise(transactions, 
+          transactions = mean(transactions),
+          price_total = mean(price_total, na.rm = TRUE)
+          )
+```
+
+summarise() is not terribly useful unless we pair it with group_by(). This changes the unit of analysis from the complete dataset to individual groups. 
+
+Then, when you use the dplyr verbs on a grouped data frame they'll be automatically applied "by group". 
+
+For example, if we applied exactly the same code to a data frame grouped by county, we get the average price volume of transactions per county:
+```{r}
+(by_county <- group_by(transactions, county))
+```
+
+```{r}
+summarise(by_county, 
+          transactions = mean(transactions),
+          price_total = mean(price_total, na.rm = TRUE)
+          )
+```
+
+
+> Together group_by() and summarise() provide one of the tools that you'll use most commonly when working with dplyr: grouped summaries. 
+
+## Combining multiple operations with the pipe
+
+Imagine that we want to explore the mean_volume_per_month per county for large apartments (area == "70-249,99"). Using what you know about dplyr, you might write code like this (step by step, no pipes!):
+
+```{r}
+
+```
+
+Visualise summarised data by bargraph: 
+```{r}
+
+```
+
+
+
+There are four steps to prepare this data:
+
+- Group transactions by county and area.
+
+- Summarise to compute total volume.
+
+- Filter to include only large 70-245 m2 apartments.
+
+- we rearranged column order by select + everything
+
+
+This code is a little frustrating to write because we have to give each intermediate data frame a name, even though we don't care about it. Naming things is hard, so this slows down our analysis.
+
+There's another way to tackle the same problem with the pipe, %>%:
+
+Previous code with pipes:
+```{r}
+
+```
+
+
+This focuses on the transformations, not what's being transformed, which makes the code easier to read. You can read it as a series of imperative statements: group, then summarise, then filter. As suggested by this reading, a good way to pronounce %>% when reading code is "then".
+
+> Behind the scenes, x %>% f(y) turns into f(x, y), and x %>% f(y) %>% g(z) turns into g(f(x, y), z) and so on. You can use the pipe to rewrite multiple operations in a way that you can read left-to-right, top-to-bottom. 
+
+## Missing values
+What about this na.rm argument in summary function. What happens if we don't set it?
+```{r}
+
+```
+
+We get a lot of missing values! That's because aggregation functions obey the usual rule of missing values: if there’s any missing value in the input, the output will be a missing value. 
+
+## Counts
+
+Whenever you do any aggregation, it's always a good idea to include either a count (n()), or a count of non-missing values (sum(!is.na(x))).
+
+Calculate mean of total price per county and apartment area and count number of rows:
+```{r}
+
+```
+
+
+
+
+
