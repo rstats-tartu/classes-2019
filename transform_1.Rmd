@@ -44,7 +44,8 @@ Load tidyverse library and dataset:
 
 ```{r}
 library(tidyverse)
-library(lubridate)
+library(here)
+library(lubridate) # we may not need it for now but it's good to know
 ```
 
 ### Viruses data 
@@ -53,7 +54,24 @@ Viruses data contains virus strain taxonomic and genome info, dataset was downlo
 
 Let's import viruses.csv file from data subfolder: 
 ```{r}
-(viruses <- read_csv("data/viruses.csv"))
+(viruses <- read_csv(here("data", "viruses.csv")))
+```
+
+here() uses clever heuristics to identify your working directory and updates file paths respectively:
+
+```{r}
+here("data", "viruses.csv")
+```
+
+Set up here like so, cd to your working directory and run:
+```{r}
+here::set_here()
+```
+
+
+You could also just run:
+```{r, eval=FALSE}
+viruses <- read_csv("data/viruses.csv")
 ```
 
 
@@ -341,9 +359,9 @@ Select columns that end with "date"
 
 - contains("ijk"): matches names that contain "ijk".
 
-All columns that contain word "price"
+All columns that contain word "project"
 ```{r}
-select(transactions, contains("price"))
+
 ```
 
 
@@ -357,7 +375,7 @@ matches("ijk") # same as contains("ijk)
 
 
 ```{r}
-select(transactions, matches("[[:punct:]]"))
+select(viruses, matches("[[:punct:]]"))
 ```
 
 
@@ -365,10 +383,9 @@ select(transactions, matches("[[:punct:]]"))
 
 - everything() is useful if you have a handful of variables you'd like to move to the start of the data frame.
 
-
-Move columns year and month to the start of the data frame, and keep all other columns.
+Move columns tax_id, size_kb and gc to the start of the data frame, and keep all other columns.
 ```{r}
-select(transactions, year, month, everything())
+
 ```
 
 
@@ -377,35 +394,38 @@ See ?select for more details.
 
 ### Exercises
 
-1. What happens if you include the name of a variable (e.g. count) multiple times in a select() call?
+1. What happens if you include the name of a variable (e.g. gc) multiple times in a select() call?
 
 ```{r}
-select(transactions, count, count, count)
+
 ```
 
 
 2. What does the one_of() function do? Why might it be helpful in conjunction with this vector?
 ```{r}
-(vars <- c("area", "count", "fffffff"))
-select(transactions, one_of(vars))
+(vars <- c("tax_id", "gc", "fffffff"))
+select(viruses, one_of(vars))
 ```
+
+What happens if you try to select columns just by using this vector:
 
 ```{r, eval=FALSE}
-select(transactions, c("area", "count", "ffffff"))
+select(viruses, c("tax_id", "gc", "fffffff"))
 ```
 
-
-3. Select from 'transactions' all variables that contain string 'PRICE' (note case!). 
+3. Select from 'diabetes' data all variables that contains string 'BP' (note case!). 
 
 ```{r}
-select(transactions, contains("PRICE"))
+diabetes <- read_delim(here("data", "diabetes.csv"), delim = ";")
+diabetes
 ```
 
 
 Does the result of running the following code surprise you? How do the select helpers deal with case by default? How can you change that default?
+
 ```{r}
 ?select
-trans_price_case <- select(transactions, contains("PRICE", ignore.case = FALSE))
-class(trans_price_case)
+diabetes_bp <- select(diabetes, contains("BP", ignore.case = FALSE))
+diabetes_bp
 ```
 
