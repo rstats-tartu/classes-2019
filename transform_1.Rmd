@@ -1,7 +1,7 @@
 ---
-title: "Data transformation using dplyr (aka five verbs) 1"
+title: "Data transformation using dplyr (aka five verbs)"
 author: "Taavi Päll"
-date: "09. oktoober 2018"
+date: "2018-03-11"
 output: github_document
 ---
 
@@ -10,21 +10,28 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 ## Introduction
-I our previous classes we have been working with small cleaned up dataset to go through steps of creating some of the most common visualisation types. 
 
-In your workflow you are going to need data visualisation at two points:
+I our previous classes we were working with small and cleaned up **mgp** dataset to go through steps of creating some of the most common visualisation types. 
 
-(1) during exploratory data analysis where you learn to know your dataset and 
-(2) during report preparation when you try to communicate what have you found. 
+In your data analysis workflow you need to plot out data at two points:
 
-This is not two stop trip, it's more like a roundabout, an iterative process, where you pass these two point multiple times after you have done some "tweaking" of your data. By "tweaking" I mean here data transformation and/or modeling. 
+1. During **exploratory data analysis** where you learn to know your dataset and 
+2. **reporting** when you try to communicate what you have found. 
 
-You need to transform your data during analysis, because in real life you rarely start with a dataset that is in the right form for visualisation and modeling. So, often you will need to:
+However, data analysis is not a linear process, but an iterative process, where you go in circles number of times after you have done some "tweaking" (transformation and/or modeling) of your data. 
 
-- summarise your data or to 
+Here we add another stop to data analysis process: data transformation.
+
+In most cases you need to transform your data during analysis, because in real life you rarely start with a dataset that is in the right form for visualisation and modeling. 
+
+
+Usually you will need to:
+
+- summarise your data, 
 - create new variables, 
-- rename variables, or 
+- rename variables, 
 - reorder the observations. 
+
 
 We are going to use the dplyr library from tidyverse to learn how to carry out these tasks. 
 
@@ -32,19 +39,21 @@ We are going to use the dplyr library from tidyverse to learn how to carry out t
 
 Again, we are going to follow closely R4DS book chapter "Data transformation" available from http://r4ds.had.co.nz/transform.html. More examples are available from https://rstats-tartu.github.io/lectures/tidyverse.html#dplyr-ja-selle-viis-verbi
 
-## Class V
 
 Load tidyverse library and dataset:
+
 ```{r}
 library(tidyverse)
+library(lubridate)
 ```
 
-### Estonian apartment transactions data 
-Transactions data contain monthly apartment sales data from January 2005 to October 2018 split up by counties and size of apartments. Price info is available when at least five transactions has been carried out.
+### Viruses data 
 
-Let's import transactions_with_consumer_price_index.csv file from data subfolder: 
+Viruses data contains virus strain taxonomic and genome info, dataset was downloaded from NCBI. Please see README.md in data folder.
+
+Let's import viruses.csv file from data subfolder: 
 ```{r}
-(transactions <- read_csv("data/transactions_with_consumer_price_index.csv"))
+(viruses <- read_csv("data/viruses.csv"))
 ```
 
 
@@ -73,41 +82,31 @@ All verbs work similarly:
 
 Together these properties make it easy to chain together multiple simple steps to achieve a complex result. Let's dive in and see how these verbs work.
 
-## Prepare data, cont. 
-
-Let's improve these terrible column names:
-```{r}
-colnames(transactions) <- c("date", "county", "area", "count", "area_total", "area_mean", "price_total", "price_min", "price_max", "area_price_min", "area_price_max", "area_price_median", "area_price_mean", "area_price_sd", "month", "year", "price_index")
-```
-
-```{r}
-transactions
-```
-
 
 ## Filter rows with filter()
 
 filter() allows you to subset observations based on their values. The first argument is the name of the data frame. The second and subsequent arguments are the expressions that filter the data frame. 
 
-For example, we can select data from 'Tartu maakond':
+For example, we can filter bacterial viruses:
+
 ```{r}
-filter(transactions, county == "Tartu maakond")
+
 ```
 
 dplyr runs the filtering operation and returns a new data frame. 
 
-dplyr functions never modify their inputs, so if you want to save the result, you'll need to use the assignment operator, <-:
+dplyr functions never modify their inputs, so if you want to save the result, you'll need to use the assignment operator, <-, like so:
 
-Assign data from 'Tartu maakond' to object tartu_county:
+Assign bacterial viruses to object phages:
 ```{r}
-(tartu_county <- filter(transactions, county == "Tartu maakond"))
+
 ```
 
 ### Comparisons
 
 What is this == operator? Why not use = to check equality:
 ```{r, eval=FALSE}
-filter(transactions, year = 2005)
+filter(viruses, host = "bacteria")
 ```
 
 It appears that = is another assignment operator besides ->
@@ -138,34 +137,34 @@ Together, logical (boolean) operators are:
 - | is OR, 
 - ! is NOT
 
-The following code finds all transactions in November (11) OR December (12):
+The following code finds all viruses with genome info release date in 2019 OR in 2018, note that we use year function from lubridate package to extract year of release from date:
 ```{r}
-filter(transactions, month == 11 | month == 12)
+
 ```
 
-You can't write filter(flights, month == 11 | 12) and in case of numeric months this will give you wrong answer instead of Error, so be careful:
+You can't write something like filter(flights, month == 11 | 12) and in case of numeric years this will give you wrong answer instead of Error, so be careful:
 ```{r, eval=FALSE}
-filter(transactions, kuu == 11 | 12)
+filter(viruses, year(release_date) == 2019 | 2018)
 ```
 
 A useful short-hand for this problem is x %in% y. This will select every row where x is one of the values in y:
 
-Filter observations where kuu (month) is Nov or Dec (we have numeric months in data frame):
+Filter observations where year of release_date is 2019 or 2018:
 ```{r}
-filter(transactions, month %in% c(11, 12))
-```
 
-```{r}
-all.equal(c(11, 12), 11:12)
 ```
 
 
-Sometimes you can simplify complicated subsetting by remembering De Morgan's law: !(x & y) is the same as !x | !y, and !(x | y) is the same as !x & !y. 
+Remember that (De Morgan's law):   
 
-For example, if you wanted to find months with 5 to 10 transactions, you could use either of the following two filters:
+- !(x & y) is the same as !x | !y  
+- !(x | y) is the same as !x & !y  
+
+
+For example, if you wanted to find viruses with genome sizes between 1 to 2 kb, you could use either of the following two filters, note that we are excluding viruses with genomes smaller than 1kb or bigger than 2kb:
 ```{r}
-filter(transactions, !(count < 5 | count > 10))
-filter(transactions, !count < 5, !count > 10)
+filter(viruses, !(size_kb < 1 | size_kb > 2))
+filter(viruses, !size_kb < 1, !size_kb > 2)
 ```
 
 ### Missing values
@@ -187,36 +186,24 @@ x <- NA
 is.na(x)
 ```
 
-Let's use is.na() within filter to filter rows with missing price info (price_total):
+Let's use is.na() within filter to filter rows with missing GC content data (variable called "gc"):
 ```{r}
-filter(transactions, is.na(price_total))
+
 ```
 
-Ok. Now we got all rows with missing price_total... how would you change this code to really exclude these rows with missing data (Hint: !FALSE):
+Ok. Now we got all rows with missing gc... how would you change this code to really exclude these rows with missing data (Hint: !FALSE):
 ```{r}
-filter(transactions, !is.na(price_total))
-```
 
-There is another function that works with data frames to find rows with complete set of observations - complete.cases():
-```{r}
-complete.cases(transactions)
 ```
 
 
+There are other functions that remove rows with NA in any of the columns from your data frame and keep only "complete cases":
 ```{r}
-filter(transactions, complete.cases(transactions))
-transactions %>% filter(complete.cases(.))
+na.exclude(viruses)
+na.omit(viruses)
+drop_na(viruses)
 ```
 
-```{r}
-na.exclude(transactions)
-na.omit(transactions)
-drop_na(transactions)
-```
-
-
-Note that you need to put dot inside complete.cases() function. Why so? 
-You can try to feed transactions data directly to complete.cases(). How this output looks like?
 
 ## Arrange rows with arrange()
 
@@ -224,12 +211,12 @@ arrange() works similarly to filter() except that instead of selecting rows, it 
 
 It takes a data frame and a set of column names to order by. If you provide more than one column name, each additional column will be used to break ties in the values of preceding columns:
 ```{r}
-arrange(transactions, count)
+arrange(viruses, size_kb)
 ```
 
 Use desc() to re-order by a column in descending order:
 ```{r}
-arrange(transactions, desc(count))
+
 ```
 
 Missing values are always sorted at the end, even with desc() function:
