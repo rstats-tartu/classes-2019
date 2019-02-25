@@ -161,11 +161,13 @@ Remember that (De Morgan's law):
 - !(x | y) is the same as !x & !y  
 
 
-For example, if you wanted to find viruses with genome sizes between 1 to 2 kb, you could use either of the following two filters, note that we are excluding viruses with genomes smaller than 1kb or bigger than 2kb:
+For example, if you wanted to find viruses with genome sizes between 1 to 2 kb, you could use either of the following two filters, note that in the first case we are excluding viruses with genomes smaller than 1kb or bigger than 2kb:
 ```{r}
 filter(viruses, !(size_kb < 1 | size_kb > 2))
-filter(viruses, !size_kb < 1, !size_kb > 2)
+filter(viruses, size_kb >= 1, size_kb <= 2)
 ```
+
+Which one from these two is more explicit? Note that comma here in filter function between logical evaluations means "&".
 
 ### Missing values
 
@@ -204,6 +206,45 @@ na.omit(viruses)
 drop_na(viruses)
 ```
 
+### Exercises
+
+1. Find all viruses that:
+
+- have genome of over 10000kb
+
+```{r}
+
+```
+
+- belong to *Papillomaviridae*
+
+```{r}
+
+```
+
+- are from plants and environment
+
+```{r}
+
+```
+
+- were released between 01. January 1980 - 01. January 1990, including these days:
+
+```{r}
+filter(viruses, release_date > "1980-01-01", release_date < "1990-01-01")
+```
+
+2. there is also between() function in dplyr. What does it do? How can you use it to find viruses with genomes between 1 to 2 kb?
+```{r}
+
+```
+
+3. How many viruses belong to "unclassified" subgroup:
+
+```{r}
+
+```
+
 
 ## Arrange rows with arrange()
 
@@ -231,31 +272,14 @@ arrange(df, desc(x))
 
 ### Exercises
 
-1. How could you use arrange() to sort all missing values to the start? (Hint: use is.na()).
-
-```{r}
-arrange(transactions, !is.na(price_total))
-```
-
-
-2. Sort transactions to find the busiest months (most transactions, arv) in each county (maakond).
+1. How could you use arrange() to sort viruses with missing gc values to the start? (Hint: use is.na()).
 
 ```{r}
 
 ```
 
-We'll come to this question back later...
 
-3. Sort transactions to find the months with highest mean price payed (`pinnaühiku hind(eur /m2) keskmine`) for each conty.
-
-```{r}
-
-```
-
-come back again...
-
-
-4. Which type of apartements (`pindala(m2)`) sold the best in 2017? Which sold worst in 2017?
+2. Sort viruses to find largest viruses:
 
 ```{r}
 
@@ -268,28 +292,29 @@ select() allows you to rapidly zoom in on a useful subset of columns using opera
 
 Select first three columns:
 ```{r}
-select(transactions, 1:3)
+select(viruses, 1:3)
 ```
 
-Select columns from year to count:
+Select columns from group to host:
 ```{r}
-select(transactions, year:count)
+
 ```
 
 !!! select works in both directions: L>R and R<L!
-select year, county, area and count
+select organism_name, size_kb, gc:
 ```{r}
-select(transactions, year, county, area, count)
+
 ```
 
 
-Exlude columns year, county, area and count:
+Exlude columns bioproject_accession, bioproject_id, segments:
 ```{r}
-select(transactions, -year, -county, -area, -count)
+
 ```
 
+Another way, exclude as a vector:
 ```{r}
-select(transactions, -c("year", "county", "area", "count"))
+
 ```
 
 Use minus sign to exclude variables! You can submit variables to select as character vector.
@@ -299,18 +324,18 @@ There are a number of __helper functions you can use within select()__:
 
 - starts_with("abc"): matches names that begin with "abc".
 
-Select columns that start with "price"
+Select columns that start with "bio"
 ```{r}
-select(transactions, starts_with("price"))
+
 ```
 
 
 - ends_with("xyz"): matches names that end with "xyz".
 
 
-Select columns that end with "max"
+Select columns that end with "date"
 ```{r}
-select(transactions, ends_with("max"))
+
 ```
 
 
