@@ -224,6 +224,32 @@ na.omit(viruses)
 drop_na(viruses)
 ```
 
+### Finding non-exact matches
+
+Often you find yourself in need to filter categorical variables based on some non-exact matching, for example when  
+- values are too long,   
+- there are too many unique unkown values,   
+- some observations that belong to the same category have slightly different values (`foo bar` and `foo-bar` and `foobar`). 
+
+To solve this problem more elegantly, you can use regular expressions. (for help see ?`regular expression`)
+
+regular expressions are covered in *tidyverse* by the **stringr** package. The stringr function that is useful within filter is str_detect(). Although, stringr belongs to tidyverse, it is not loaded together with core tidyverse packages by default, so you need to load it separately.
+
+
+```{r}
+library(stringr)
+str_detect(c("banana","foo bar", "foo-bar", "foobar"), "foo.?bar")
+```
+
+As you can see, str_detect() returns logical vector.
+
+So how this should work when you run str_detect inside filter?
+```{r}
+
+```
+
+
+
 ### Exercises
 
 1. Find all viruses that:
