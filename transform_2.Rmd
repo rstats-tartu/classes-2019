@@ -1,7 +1,7 @@
 ---
 title: "Data transformation using dplyr (aka five verbs) 2"
 author: "Taavi Päll"
-date: "2018-10-16"
+date: "2019-03-11"
 output: github_document
 ---
 
@@ -275,7 +275,7 @@ This focuses on the transformations, not what's being transformed, which makes t
 
 > Behind the scenes, x %>% f(y) turns into f(x, y), and x %>% f(y) %>% g(z) turns into g(f(x, y), z) and so on. You can use the pipe to rewrite multiple operations in a way that you can read left-to-right, top-to-bottom. 
 
-## Missing values
+## Missing values, again
 What about this na.rm argument in summary function. What happens if we don't set it?
 ```{r}
 

@@ -44,8 +44,8 @@ Load tidyverse library and dataset:
 
 ```{r}
 library(tidyverse)
-library(here)
-library(lubridate) # we may not need it for now but it's good to know
+library(lubridate) # library to work with dates and time
+library(here) # (always) locate files in your project folder P.S. load here after lubridate, because lubridate has also (now deprecated) function called here
 ```
 
 ### Viruses data 
