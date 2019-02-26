@@ -288,6 +288,26 @@ arrange(df, x)
 arrange(df, desc(x))
 ```
 
+
+### Get unique rows with distinct()
+
+Sometimes observations become duplicated during data wrangling, sometimes you need to get unique combinations of observations. 
+dplyr has distinct() function to retain only unique rows from input table.
+
+
+viruses data has `r nrow(viruses)` rows, but what if we would like to get only unique organism_name and tax_id combinations...  
+First let's select organism_name and tax_id columns
+```{r}
+taxids <- select(viruses, 1:2)
+taxids
+```
+
+Here we are... with distinct organism_name tax_id combinations.
+```{r}
+distinct(taxids)
+```
+
+
 ### Exercises
 
 1. How could you use arrange() to sort viruses with missing gc values to the start? (Hint: use is.na()).
