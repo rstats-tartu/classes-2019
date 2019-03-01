@@ -459,7 +459,7 @@ What happens if you try to select columns just by using this vector:
 select(viruses, c("tax_id", "gc", "fffffff"))
 ```
 
-3. Select from 'diabetes' data all variables that contains string 'BP' (note case!). 
+3. Select all variables from 'diabetes' dataset that contain string 'BP' (note case!). 
 
 ```{r}
 diabetes <- read_delim(here("data", "diabetes.csv"), delim = ";")

@@ -9,101 +9,82 @@ output: github_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-Load tidyverse library and dataset:
+## Load tidyverse library and dataset:
 ```{r}
 library(tidyverse)
+library(lubridate)
+library(here)
 ```
+
+Import viruses.csv file from data subfolder, note that some genes and proteins values are labelled with "-", we consider them missing values and assign NA to them: 
+```{r}
+viruses <- read_csv(here("data", "viruses.csv"), na = c(NA, "-"))
+viruses
+```
+
 
 ## Add new variables with mutate()
-Mutate creates new variables (columns) from existing variables (columns). Mutate is used to do calculations columnwise.
 
-To start illustrating what mutate does, let's have a look at the changes of real estate prices in transactions data. 
 
-In Estonia, real estate market collapsed after 2008 economic crisis. In 2017, various sources started talking about the new bubble. Are we really near the bubble? We can start elucidating this by looking at the price dynamics.
+- mutate() allows you to modify or create new variables (columns) in a dataset.   
+- mutate works on vectors!   
+- mutate does not reduce/change the number of rows in tibble!   
 
-First, select smaller subset of columns: year to count, median price per unit area (ends with median) and consumer index.
-let's put year and month in to the begginning:
+
+Based on viruses dataset, there are not many questions that we would ask that need creation of new variables. 
+
+However, based on genome size and number of genes and proteins we can calculate gene density per kb:
+
+Let's create smaller more focussed dataset:
 ```{r}
-(median_price <- select(transactions, date, year, month, county, area, count, matches("(median|index)$")))
+orf_density <- select(viruses, organism_name, tax_id, size_kb, genes, proteins)
+orf_density
 ```
 
-Let's make a quick plot using Harjumaa data. 
+For start, we can see that some viruses have either genes or proteins missing. 
 
+We can create new variable where we fill in missing gene numbers with protein number if available:
 
-## You can skip this part if date column is present in data
-Oh, but we want to have time on the x axis. Whereas we have year and month columns in our dataset and these are not in the format that is recognised as time...
-
-We need to convert year and month to time format in the form "2005 Jan" or something..
-
-We are going to use ymd() function from tidyverse lubridate library. ymd recognizes several types of year-month-day strings (like "2018-04-09", "2018 04 09", etc) and converts them to date class. We just have to add also place holder for day for this function to work. We would set day to 1, as first day of month.
-
-First, we construct date string with paste() and then convert this string to date. Note that we can refer to columns that we've just created:
+dplyr has function case_when() that vectorises multiple if and else if statements:
 
 ```{r}
-paste("a", "b", "foo", sep = "-")
-paste0("a", "b", "foo")
+orf_density <- mutate(orf_density, orfs = case_when(
+  is.na(genes) ~ proteins,
+  TRUE ~ genes
+))
+orf_density
+```
+
+Here we created new variable "orfs" and assigned proteins number to it in cases where we had missing gene number. All other cases (TRUE) we assigned genes value to orfs.
+
+Now we are ready to calculate number of orfs per kb:
+
+```{r}
+orf_density <- mutate(orf_density, orfs_kb = orfs / size_kb)
 ```
 
 
+Excercise: move orfs_kb column into third place after taxonomy columns:
+
 ```{r}
-library(lubridate)
+select(orf_density, 1:2, orfs_kb, everything())
 ```
 
 
-## Plot Harju maakond data
-
-Let's plot price trend using median price per $m^2$ (area_price_median)
+There is also transmute (?transmute) a close cousin of mutate that drops all other columns except the new modified column: 
 ```{r}
-median_price %>% 
-  filter(county == "Harju maakond") %>% 
-  ggplot() +
-  geom_line(aes(x = date, y = area_price_median, color = area))  
+transmute(orf_density, orfs_kb = orfs / size_kb)
 ```
 
-You can check if x = time_string works in ggplot.
 
-We can see that in "Harju maakond" and "Tartu maakond" the nominal prices are reaching again the levels before the economic crisis. The question is, whether there is still some room to growth?
+Excercise: plot distribution of size_kb:
 
-We can try to answer this question by bringing in also the inflation that helps to understand the real prices. We can adjust prices for inflation by normalizing them with consumer index. Luckily our transactions dataset already contains consumer indices as percent relative to year 2005 (code used to create this dataset is available in file "data-raw/download-apartment-data.R").
-
-Consumer index is expressed as percent relative to year 2005, first we need to convert price_index to proportions and then we can calculate adjusted prices, like so:
 ```{r}
-(median_price <- mutate(median_price, index = price_index / 100,
-                        adj_area_price = area_price_median / index))
-```
-
-mutate works on vectors!
-
-
-Plot out adjusted prices:
-```{r}
-median_price %>% 
-  filter(county == "Harju maakond") %>% 
-  ggplot() +
-  geom_line(aes(x = date, y = adj_area_price, color = area))  
-```
-
-As we can see, based on real values, there was still some potential for growth in 2018. 
-
-What happened in other counties?
-```{r}
-median_price %>% 
-  ggplot() +
-  geom_line(aes(x = date, y = adj_area_price, color = area)) +
-  facet_wrap(~ county)
-```
-
-You can keep only newly created variable by using transmute() function:
-```{r}
-only_adj_price <- transmute(median_price, adj_area_price2 = area_price_median / index)
-```
-
-What plot can we create with this one column?
-```{r}
-ggplot(data = only_adj_price) +
-  geom_histogram(mapping = aes(adj_area_price2), bins = 30) +
+ggplot(orf_density) +
+  geom_histogram(aes(orfs_kb), bins = 30) +
   scale_x_log10()
 ```
+
 
 
 
@@ -116,17 +97,21 @@ There are many functions for creating new variables that you can use with mutate
 Some of the functions are familiar from base R class: 
 - Arithmetic operators: +, -, *, /, ^.
 
-Arithmetic operators are also useful in conjunction with the aggregate functions. For example, x / sum(x) calculates the proportion of a total, and y - mean(y) computes the difference from the mean.
+Arithmetic operators are also useful in conjunction with the aggregate functions. 
 
-Let's calculate proportion of transactions per apartement and month and county
+For example, x / sum(x) calculates the proportion of a total, and y - mean(y) computes the difference from the mean.
+
+Let's calculate the difference og gc value from the mean for each taxon:
 ```{r}
-transactions %>% 
-  mutate(prop = count / sum(count, na.rm = TRUE)) %>% 
-  select(date:count, prop)
+viruses %>% 
+  mutate(dgc = gc / mean(gc, na.rm = TRUE)) %>% 
+  select(1:2, gc, dgc)
 ```
 
 
-- Modular arithmetic: %/% (integer division) and %% (remainder, modulus), where x == y * (x %/% y) + (x %% y). Modular arithmetic is a handy tool because it allows you to break integers up into pieces. For example, in the tidyverse flights dataset, you can compute hour and minute from dep_time with:
+- Modular arithmetic: %/% (integer division) and %% (remainder, modulus), where x == y * (x %/% y) + (x %% y). 
+
+Modular arithmetic is a handy tool because it allows you to break integers up into pieces. For example, in the tidyverse flights dataset, you can compute hour and minute from dep_time with:
 
 To demonstrate modulo and integer division, let's quickly introduce new dataset:
 ```{r}
@@ -145,17 +130,23 @@ transmute(flights,
 
 - Logs: log(), log2(), log10(). Note that log() converts to natural logarithm.
 
-To demonstrate logs in action, we can look at the prices. Seems that they are not normally distributed... and most of the values are concentrated at the left side.
+To demonstrate logs in action, we can look at the virus genome size. 
+
+Seems that they are not normally distributed... and most of the values are concentrated at the left side.
 ```{r}
-ggplot(data = transactions) +
-  geom_histogram(mapping = aes(x = price_max))
+ggplot(data = viruses) +
+  geom_histogram(mapping = aes(x = size_kb), bins = 30)
 ```
 
 We can have better look at the distibution by using log transformaton.
+
+First we take only unique tax_id and size_kb combinations.
+
 ```{r}
-price <- mutate(transactions, price_max_log = log10(price_max))
-ggplot(data = price) +
-  geom_histogram(mapping = aes(x = price_max_log))
+vir_taxa <- select(viruses, tax_id, size_kb) %>% distinct()
+vir_taxa <- mutate(vir_taxa, log_size_kb = log10(size_kb))
+ggplot(data = vir_taxa) +
+  geom_histogram(mapping = aes(x = log_size_kb), bins = 30)
 ```
 
 
@@ -181,13 +172,22 @@ cumsum(x)
 cummean(x)
 ```
 
-- Ranking: there are a number of ranking functions, but you should start with min_rank(). It does the most usual type of ranking (e.g. 1st, 2nd, 2nd, 4th).
+- Ranking: there are a number of ranking functions, but you should start with min_rank(). 
+
+It does the most usual type of ranking (e.g. 1st, 2nd, 2nd, 4th).
 
 ```{r}
 (y <- c(1, 2, 2, NA, 3, 4))
 min_rank(y)
 min_rank(desc(y))
 ```
+
+Let's pick largest virus in each subclass:
+```{r}
+
+```
+
+
 
 There are also row_number(), dense_rank(), percent_rank(), cume_dist(), ntile():
 ```{r}
