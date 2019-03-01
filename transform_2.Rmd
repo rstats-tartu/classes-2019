@@ -35,10 +35,9 @@ Based on viruses dataset, there are not many questions that we would ask that ne
 
 However, based on genome size and number of genes and proteins we can calculate gene density per kb:
 
-Let's create smaller more focussed dataset:
+Let's create smaller more focussed dataset by selecting organism_name, tax_id, size_kb, genes, proteins columns:
 ```{r}
-orf_density <- select(viruses, organism_name, tax_id, size_kb, genes, proteins)
-orf_density
+
 ```
 
 For start, we can see that some viruses have either genes or proteins missing. 
@@ -48,26 +47,15 @@ We can create new variable where we fill in missing gene numbers with protein nu
 dplyr has function case_when() that vectorises multiple if and else if statements:
 
 ```{r}
-orf_density <- mutate(orf_density, orfs = case_when(
-  is.na(genes) ~ proteins,
-  TRUE ~ genes
-))
-orf_density
+
 ```
 
 Here we created new variable "orfs" and assigned proteins number to it in cases where we had missing gene number. All other cases (TRUE) we assigned genes value to orfs.
 
-Now we are ready to calculate number of orfs per kb:
+Now we are ready to calculate number of orfs per kb (orfs / size_kb):
 
 ```{r}
-orf_density <- mutate(orf_density, orfs_kb = orfs / size_kb)
-```
 
-
-Excercise: move orfs_kb column into third place after taxonomy columns:
-
-```{r}
-select(orf_density, 1:2, orfs_kb, everything())
 ```
 
 
@@ -77,7 +65,7 @@ transmute(orf_density, orfs_kb = orfs / size_kb)
 ```
 
 
-Excercise: plot distribution of size_kb (try out log scale on x axis):
+Excercise: plot distribution of orfs / size_kb (try out log scale on x axis):
 
 ```{r}
 
@@ -98,11 +86,9 @@ Arithmetic operators are also useful in conjunction with the aggregate functions
 
 For example, x / sum(x) calculates the proportion of a total, and y - mean(y) computes the difference from the mean.
 
-Let's calculate the difference og gc value from the mean for each taxon:
+Let's calculate the difference of gc values from the global mean:
 ```{r}
-viruses %>% 
-  mutate(dgc = gc / mean(gc, na.rm = TRUE)) %>% 
-  select(1:2, gc, dgc)
+
 ```
 
 
@@ -116,7 +102,7 @@ library(nycflights13)
 flights
 ```
 
-Here we are, modulo and integer arithmetic operators to wrangle data, note the use of transmute:
+Here we use modulo and integer arithmetic operators to wrangle data, note the use of transmute:
 ```{r}
 transmute(flights,
   dep_time,
@@ -129,21 +115,22 @@ transmute(flights,
 
 To demonstrate logs in action, we can look at the virus genome size. 
 
-Seems that they are not normally distributed... and most of the values are concentrated at the left side.
+First, let's plot distribution of virus genomes on linear scale:
+
 ```{r}
-ggplot(data = viruses) +
-  geom_histogram(mapping = aes(x = size_kb), bins = 30)
+
 ```
 
-We can have better look at the distibution by using log transformaton.
+Seems that they are not normally distributed... and most of the values are concentrated at the left side.
 
-First we take only unique tax_id and size_kb combinations.
+We can have better look at the distribution by using log transformaton.
+
+First we filter distinct tax_id and size_kb combinations.
+Then we use mutate to log transform size_kb.
+Finally, plot out new distribution.
 
 ```{r}
-vir_taxa <- select(viruses, tax_id, size_kb) %>% distinct()
-vir_taxa <- mutate(vir_taxa, log_size_kb = log10(size_kb))
-ggplot(data = vir_taxa) +
-  geom_histogram(mapping = aes(x = log_size_kb), bins = 30)
+
 ```
 
 tip: Add some small amount to zeros
@@ -215,27 +202,25 @@ summarise(viruses,
           )
 ```
 
+
 summarise() is not very useful unless we pair it with group_by(). 
 
 This changes the unit of analysis from the complete dataset to individual groups. 
 
 Then, when you use the dplyr verbs on a grouped data frame they'll be automatically applied "by group". 
 
-For example, if we applied exactly the same code to a data frame grouped by subgroup, we get the average size_kb per virus group (please print by_group tibble into console to see grouping info):
+For example, if we applied exactly the same code to a data frame grouped by (sub)group, we get the average size_kb per virus group (please print by_group tibble into console to see grouping info):
+
+First, we create grouped by table
 ```{r}
-by_group <- group_by(viruses, group)
+
 ```
 
 Grouping info is silently written into tibble!
 
-We chose virus group (dsNDA etc) because it has less levels than subgroup, but you can try out also subgroup.
-
+Then, by using grouped table calculate summary as previously:
 ```{r}
-summarise(by_group, 
-          size_kb = mean(size_kb, na.rm = TRUE),
-          gc = mean(gc, na.rm = TRUE),
-          genes = mean(genes, na.rm = TRUE)
-          )
+
 ```
 
 
@@ -283,10 +268,7 @@ There's another way to tackle the same problem with the pipe, %>%:
 
 Previous code with pipes:
 ```{r}
-group_by(viruses, subgroup, group) %>% 
-  summarise(size_kb = mean(size_kb, na.rm = TRUE)) %>% 
-  filter(str_detect(group, "dsDNA")) %>% 
-  arrange(desc(size_kb))
+
 ```
 
 
@@ -300,22 +282,7 @@ As suggested by this reading, a good way to pronounce %>% when reading code is "
 
 Whenever you do any aggregation, it's always a good idea to include either a count (n()), or a count of non-missing values (sum(!is.na(x))).
 
-Calculate mean size_kb per group and subgroup and count number of rows in each group:
-```{r}
-viruses %>% 
-  group_by(subgroup, group) %>% 
-  summarise(size_kb = mean(size_kb, na.rm = TRUE),
-            n = n())
-```
-
-We can try to explore relationship between size differences (difference in kb-s) in subgroups versus number of taxons:
-
-```{r}
-viruses %>% 
-  group_by(group, subgroup) 
-```
-
-Plot out the results:
+Calculate mean size_kb per group and subgroup and **count number of rows in each group**:
 ```{r}
 
 ```
@@ -327,24 +294,13 @@ R provides many useful summary functions:
 
 - Measures of location: we have used mean(x), but median(x) is also useful. 
 
-It's sometimes useful to combine aggregation with logical subsetting.
+- Measures of spread: sd(x), IQR(x), mad(x). 
 
-Here, we calculate average total price for comparison also for rows with more than 100 transactions. ungroup() is necessary for filter function in this context:
-```{r}
-viruses %>% 
-  group_by(subgroup, group) %>% 
-  summarise(size_kb = mean(size_kb, na.rm = TRUE),
-            n = n())
-```
-
-- Measures of spread: sd(x), IQR(x), mad(x). The mean squared deviation, or standard deviation or sd for short, is the standard measure of spread. The interquartile range IQR() and median absolute deviation mad(x) are robust equivalents that may be more useful if you have outliers
+The mean squared deviation, or standard deviation or sd for short, is the standard measure of spread. The interquartile range IQR() and median absolute deviation mad(x) are robust equivalents that may be more useful if you have outliers
 
 ```{r}
 viruses %>% 
-  group_by(subgroup, group) %>% 
-  summarise(size_mean = mean(size_kb, na.rm = TRUE),
-            size_sd = sd(size_kb, na.rm = TRUE),
-            n = n())
+  group_by(subgroup, group)
 ```
 
 - Measures of rank: min(x), quantile(x, 0.25), max(x). Quantiles are a generalisation of the median. 
@@ -356,15 +312,23 @@ viruses %>%
   group_by(subgroup, group) %>% 
   summarise(size_min = min(size_kb, na.rm = TRUE),
             size_max = max(size_kb, na.rm = TRUE),
-            diff = size_max - size_min,
+            size_diff = size_max - size_min,
             n = n())
 ```
+
+Now we can explore relationship between size variation (size_diff) and number of taxons in a subgroup:
+
+```{r}
+ggplot()
+```
+
+
 
 - Measures of position: first(x), nth(x, 2), last(x). 
 
 These work similarly to x[1], x[2], and x[length(x)] but let you set a default value if that position does not exist (i.e. you're trying to get the 3rd element from a group that only has two elements). For example, we can find the first and last departure for each day:
 
-Here, we use again flights dataset:
+Here, we use flights dataset:
 ```{r}
 not_cancelled <- flights %>% 
   filter(!is.na(dep_delay), !is.na(arr_delay))
@@ -403,12 +367,10 @@ viruses %>%
 When used with numeric functions, TRUE is converted to 1 and FALSE to 0. 
 This makes sum() and mean() very useful: sum(x) gives the number of TRUEs in x, and mean(x) gives the proportion.
 
+Number and proportion of genomes of size_kb > 5 in each subgroup:
+
 ```{r}
-viruses %>% 
-  group_by(subgroup) %>% 
-  summarise(n = sum(size_kb > 5),
-            p = mean(size_kb > 5)) %>% 
-  arrange(desc(n))
+
 ```
 
 ## Grouping by multiple variables
@@ -455,19 +417,14 @@ by_group %>%
   - A flight is 15 minutes early 50% of the time, and 15 minutes late 50% of the time.
 
 ```{r}
-flights %>% 
-  group_by(flight) %>% 
-  summarise(d = mean(arr_delay == abs(15), na.rm = TRUE)) %>% 
-  filter(near(d, 0.5))
+
 ```
+
 
   - A flight is always 10 minutes late.
 
 ```{r}
-flights %>% 
-  group_by(flight) %>% 
-  summarise(d = mean(arr_delay == 10, na.rm = TRUE)) %>% 
-  filter(near(d, 1))
+
 ```
 
   - A flight is 30 minutes early 50% of the time, and 30 minutes late 50% of the time.
@@ -475,12 +432,7 @@ flights %>%
   - 99% of the time a flight is on time. 1% of the time it’s 2 hours late.
 
 ```{r}
-flights %>% 
-  group_by(flight) %>% 
-  summarise(d120 = mean(dep_delay >= 120, na.rm = TRUE),
-            ontime = mean(near(dep_delay, 0), na.rm = TRUE)) %>% 
-  # filter(ontime >= 0.5) %>% 
-  arrange(desc(d120))
+
 ```
 
 
@@ -500,25 +452,22 @@ flights %>%
 
 Grouping is most useful in conjunction with summarise(), but you can also do convenient operations with mutate() and filter():
 
-- Find the largest (#1) virus(es) for each subgroup:
+- Find the largest (#1) virus(es) for each subgroup by using min_rank():
 
 ```{r}
-viruses %>% 
-  group_by(subgroup) %>% 
-  filter(min_rank(desc(size_kb)) == 1)
+
 ```
 
 - Find all groups with average bigger than a threshold:
 
 ```{r}
-viruses %>% 
-  group_by(group, subgroup) %>% 
-  filter(mean(size_kb) > 1000)
+
 ```
 
-- Standardise to compute per group metrics:
+- Standardise to compute per group metrics (sweep):
 
-Here we 
+Subtract (divide, multiply, %/%) group mean from size_kb:
+
 ```{r}
 size_norm <- viruses %>%
   group_by(group, subgroup) %>% 
