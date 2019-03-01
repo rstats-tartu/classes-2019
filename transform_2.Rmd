@@ -29,7 +29,7 @@ viruses
 - mutate() allows you to modify or create new variables (columns) in a dataset.   
 - mutate works on vectors!   
 - mutate does not reduce/change the number of rows in tibble!   
-
+- mutate alway adds columns to the end of dataset
 
 Based on viruses dataset, there are not many questions that we would ask that need creation of new variables. 
 
@@ -77,14 +77,11 @@ transmute(orf_density, orfs_kb = orfs / size_kb)
 ```
 
 
-Excercise: plot distribution of size_kb:
+Excercise: plot distribution of size_kb (try out log scale on x axis):
 
 ```{r}
-ggplot(orf_density) +
-  geom_histogram(aes(orfs_kb), bins = 30) +
-  scale_x_log10()
-```
 
+```
 
 
 
@@ -149,7 +146,7 @@ ggplot(data = vir_taxa) +
   geom_histogram(mapping = aes(x = log_size_kb), bins = 30)
 ```
 
-
+tip: Add some small amount to zeros
 ```{r}
 log(0 + 0.01)
 ```
@@ -182,12 +179,11 @@ min_rank(y)
 min_rank(desc(y))
 ```
 
-Let's pick largest virus in each subclass:
+Let's pick smallest and largest virus:
 ```{r}
-
+filter(viruses, min_rank(size_kb) == 1)
+filter(viruses, min_rank(desc(size_kb)) == 1)
 ```
-
-
 
 There are also row_number(), dense_rank(), percent_rank(), cume_dist(), ntile():
 ```{r}
@@ -202,63 +198,83 @@ cume_dist(y)
 - Currently dep_time and sched_dep_time are convenient to look at, but hard to compute with because they're not really continuous numbers. Convert them to a more convenient representation of number of minutes since midnight.
 
 ```{r}
-flights
+flights %>% 
+  select(dep_time, sched_dep_time)
 ```
 
 
 ## Grouped summaries with summarise()
 
 The last key verb is summarise(). It collapses a data frame to a single row:
+
 ```{r}
-summarise(transactions, 
-          transactions = mean(transactions),
-          price_total = mean(price_total, na.rm = TRUE)
+summarise(viruses, 
+          size_kb = mean(size_kb, na.rm = TRUE),
+          gc = mean(gc, na.rm = TRUE),
+          genes = mean(genes, na.rm = TRUE)
           )
 ```
 
-summarise() is not terribly useful unless we pair it with group_by(). This changes the unit of analysis from the complete dataset to individual groups. 
+summarise() is not very useful unless we pair it with group_by(). 
+
+This changes the unit of analysis from the complete dataset to individual groups. 
 
 Then, when you use the dplyr verbs on a grouped data frame they'll be automatically applied "by group". 
 
-For example, if we applied exactly the same code to a data frame grouped by county, we get the average price volume of transactions per county:
+For example, if we applied exactly the same code to a data frame grouped by subgroup, we get the average size_kb per virus group (please print by_group tibble into console to see grouping info):
 ```{r}
-(by_county <- group_by(transactions, county))
+by_group <- group_by(viruses, group)
 ```
 
+Grouping info is silently written into tibble!
+
+We chose virus group (dsNDA etc) because it has less levels than subgroup, but you can try out also subgroup.
+
 ```{r}
-summarise(by_county, 
-          transactions = mean(transactions),
-          price_total = mean(price_total, na.rm = TRUE)
+summarise(by_group, 
+          size_kb = mean(size_kb, na.rm = TRUE),
+          gc = mean(gc, na.rm = TRUE),
+          genes = mean(genes, na.rm = TRUE)
           )
 ```
 
 
-> Together group_by() and summarise() provide one of the tools that you'll use most commonly when working with dplyr: grouped summaries. 
+> Together group_by() and summarise() provide one of the main tool that you'll use most frequently when working with dplyr: grouped summaries. 
 
 ## Combining multiple operations with the pipe
 
-Imagine that we want to explore the mean_volume_per_month per county for large apartments (area == "70-249,99"). Using what you know about dplyr, you might write code like this (step by step, no pipes!):
+Imagine that we want to explore genome size for the subgroups in dsDNA viruses. 
+
+Using what you know about dplyr, you might write code like this (step by step, no pipes!):
 
 ```{r}
-
+by_subgroup <- group_by(viruses, subgroup, group)
+subgroup_sizes <- summarise(by_subgroup, size_kb = mean(size_kb, na.rm = TRUE))
+dsdna_sizes <- filter(subgroup_sizes, str_detect(group, "dsDNA"))
+arrange(dsdna_sizes, desc(size_kb))
 ```
 
 Visualise summarised data by bargraph: 
 ```{r}
-
+ggplot(dsdna_sizes) +
+  geom_bar(aes(x = reorder(str_replace(subgroup, "viridae", ""), desc(size_kb)), 
+               y = size_kb), 
+           stat = "identity") +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1),
+        axis.title.x = element_blank())
 ```
 
 
 
 There are four steps to prepare this data:
 
-- Group transactions by county and area.
+- Group viruses by subgroup and group.
 
-- Summarise to compute total volume.
+- Summarise to compute mean size.
 
-- Filter to include only large 70-245 m2 apartments.
+- Filter to include only dsDNA viruses.
 
-- we rearranged column order by select + everything
+- we arranged rowws so that viruses with biggest genomes show on top
 
 
 This code is a little frustrating to write because we have to give each intermediate data frame a name, even though we don't care about it. Naming things is hard, so this slows down our analysis.
@@ -267,27 +283,39 @@ There's another way to tackle the same problem with the pipe, %>%:
 
 Previous code with pipes:
 ```{r}
-
+group_by(viruses, subgroup, group) %>% 
+  summarise(size_kb = mean(size_kb, na.rm = TRUE)) %>% 
+  filter(str_detect(group, "dsDNA")) %>% 
+  arrange(desc(size_kb))
 ```
 
 
-This focuses on the transformations, not what's being transformed, which makes the code easier to read. You can read it as a series of imperative statements: group, then summarise, then filter. As suggested by this reading, a good way to pronounce %>% when reading code is "then".
+This focuses on the transformations, not what's being transformed, which makes the code easier to read. You can read it as a series of imperative statements: group, then summarise, then filter and arrange. 
+
+As suggested by this reading, a good way to pronounce %>% when reading code is "then".
 
 > Behind the scenes, x %>% f(y) turns into f(x, y), and x %>% f(y) %>% g(z) turns into g(f(x, y), z) and so on. You can use the pipe to rewrite multiple operations in a way that you can read left-to-right, top-to-bottom. 
-
-## Missing values, again
-What about this na.rm argument in summary function. What happens if we don't set it?
-```{r}
-
-```
-
-We get a lot of missing values! That's because aggregation functions obey the usual rule of missing values: if there’s any missing value in the input, the output will be a missing value. 
 
 ## Counts
 
 Whenever you do any aggregation, it's always a good idea to include either a count (n()), or a count of non-missing values (sum(!is.na(x))).
 
-Calculate mean of total price per county and apartment area and count number of rows:
+Calculate mean size_kb per group and subgroup and count number of rows in each group:
+```{r}
+viruses %>% 
+  group_by(subgroup, group) %>% 
+  summarise(size_kb = mean(size_kb, na.rm = TRUE),
+            n = n())
+```
+
+We can try to explore relationship between size differences (difference in kb-s) in subgroups versus number of taxons:
+
+```{r}
+viruses %>% 
+  group_by(group, subgroup) 
+```
+
+Plot out the results:
 ```{r}
 
 ```
@@ -297,48 +325,50 @@ Calculate mean of total price per county and apartment area and count number of 
 
 R provides many useful summary functions:
 
-- Measures of location: we have used mean(x), but median(x) is also useful. It's sometimes useful to combine aggregation with logical subsetting.
+- Measures of location: we have used mean(x), but median(x) is also useful. 
 
+It's sometimes useful to combine aggregation with logical subsetting.
 
 Here, we calculate average total price for comparison also for rows with more than 100 transactions. ungroup() is necessary for filter function in this context:
 ```{r}
-transactions %>% 
-  group_by(county, area) %>% 
-  summarise(Av_total_price = mean(price_total, na.rm = TRUE),
-            Av_total_price100 = mean(price_total[transactions > 100], na.rm = TRUE),
-            N = n()) %>% 
-  ungroup() %>% 
-  filter(complete.cases(.))
+viruses %>% 
+  group_by(subgroup, group) %>% 
+  summarise(size_kb = mean(size_kb, na.rm = TRUE),
+            n = n())
 ```
 
 - Measures of spread: sd(x), IQR(x), mad(x). The mean squared deviation, or standard deviation or sd for short, is the standard measure of spread. The interquartile range IQR() and median absolute deviation mad(x) are robust equivalents that may be more useful if you have outliers
 
 ```{r}
-transactions %>% 
-  group_by(county, area) %>% 
-  summarise(Mean_total_price = mean(price_total, na.rm = TRUE),
-            SD_total_price = sd(price_total, na.rm = TRUE),
-            N = n()) %>% 
-  arrange(desc(SD_total_price))
+viruses %>% 
+  group_by(subgroup, group) %>% 
+  summarise(size_mean = mean(size_kb, na.rm = TRUE),
+            size_sd = sd(size_kb, na.rm = TRUE),
+            n = n())
 ```
 
-- Measures of rank: min(x), quantile(x, 0.25), max(x). Quantiles are a generalisation of the median. For example, quantile(x, 0.25) will find a value of x that is greater than 25% of the values, and less than the remaining 75%.
+- Measures of rank: min(x), quantile(x, 0.25), max(x). Quantiles are a generalisation of the median. 
+
+For example, quantile(x, 0.25) will find a value of x that is greater than 25% of the values, and less than the remaining 75%.
 
 ```{r}
-transactions %>% 
-  group_by(county, area) %>% 
-  summarise(min_tot_price = min(price_total, na.rm = TRUE),
-            max_tot_price = max(price_total, na.rm = TRUE),
-            difference = max_tot_price - min_tot_price) %>% 
-  arrange(desc(difference))
+viruses %>% 
+  group_by(subgroup, group) %>% 
+  summarise(size_min = min(size_kb, na.rm = TRUE),
+            size_max = max(size_kb, na.rm = TRUE),
+            diff = size_max - size_min,
+            n = n())
 ```
 
-- Measures of position: first(x), nth(x, 2), last(x). These work similarly to x[1], x[2], and x[length(x)] but let you set a default value if that position does not exist (i.e. you're trying to get the 3rd element from a group that only has two elements). For example, we can find the first and last departure for each day:
+- Measures of position: first(x), nth(x, 2), last(x). 
+
+These work similarly to x[1], x[2], and x[length(x)] but let you set a default value if that position does not exist (i.e. you're trying to get the 3rd element from a group that only has two elements). For example, we can find the first and last departure for each day:
 
 Here, we use again flights dataset:
 ```{r}
 not_cancelled <- flights %>% 
   filter(!is.na(dep_delay), !is.na(arr_delay))
+
 not_cancelled %>% 
   group_by(year, month, day) %>% 
   summarise(
@@ -347,7 +377,9 @@ not_cancelled %>%
   )
 ```
 
-- Counts: You've seen n(), which takes no arguments, and returns the size of the current group. To count the number of non-missing values, use sum(!is.na(x)). To count the number of distinct (unique) values, use n_distinct(x).
+- Counts: You've seen n(), which takes no arguments, and returns the size of the current group. 
+
+To count the number of non-missing values, use sum(!is.na(x)). To count the number of distinct (unique) values, use n_distinct(x).
 
 ```{r}
 # Which destinations have the most carriers?
@@ -357,50 +389,51 @@ not_cancelled %>%
   arrange(desc(carriers))
 ```
 
-Counts are so useful that dplyr provides a simple helper if all you want is a count:
-```{r}
-not_cancelled %>% 
-  count(dest)
-```
+Counts are so useful that dplyr provides a simple helper if all you want is a count. 
 
-How many apartments with more than 5 transaction:
+Number of rows per subgroup:
 ```{r}
-transactions %>% 
-  count(area, transactions > 5)
+viruses %>% 
+  count(subgroup, sort = TRUE)
 ```
 
 
-You can optionally provide a weight variable. For example, you could use this to "count" (sum) the total number of transactions for each county:
-```{r}
-transactions %>% 
-  count(county, wt = transactions)
-```
+- Counts and proportions of logical values: sum(x > 10), mean(y == 0). 
 
-- Counts and proportions of logical values: sum(x > 10), mean(y == 0). When used with numeric functions, TRUE is converted to 1 and FALSE to 0. This makes sum() and mean() very useful: sum(x) gives the number of TRUEs in x, and mean(x) gives the proportion.
+When used with numeric functions, TRUE is converted to 1 and FALSE to 0. 
+This makes sum() and mean() very useful: sum(x) gives the number of TRUEs in x, and mean(x) gives the proportion.
 
 ```{r}
-transactions %>% 
-  group_by(area) %>% 
-  summarise(N = sum(transactions > 5),
-            `%` = mean(transactions > 5))
+viruses %>% 
+  group_by(subgroup) %>% 
+  summarise(n = sum(size_kb > 5),
+            p = mean(size_kb > 5)) %>% 
+  arrange(desc(n))
 ```
 
 ## Grouping by multiple variables
 
 When you group by multiple variables, each summary peels off one level of the grouping. That makes it easy to progressively roll up a dataset:
 
+Number of rows per tax_id:
+
 ```{r}
-by_year <- transactions %>% 
-  group_by(year, county, area) 
-(year_county_area <- summarise(by_year, n = sum(transactions)))
+by_group <- viruses %>% 
+  group_by(group, subgroup, tax_id) 
+rows_by_taxid <- summarise(by_group, n = n())
+rows_by_taxid
 ```
 
 ```{r}
-(year_county <- summarise(year_county_area, n = sum(n)))
+rows_by_subgroup <- rows_by_taxid %>% 
+  summarise(n = sum(n))
+rows_by_subgroup
 ```
 
 ```{r}
-(year <- summarise(year_county, n = sum(n)))
+rows_by_group <- rows_by_subgroup %>% 
+  summarise(n = sum(n))
+rows_by_group
 ```
 
 > Be careful when progressively rolling up summaries: it's OK for sums and counts, but you need to think about weighting means and variances, and it’s not possible to do it exactly for rank-based statistics like the median. In other words, the sum of groupwise sums is the overall sum, but the median of groupwise medians is not the overall median.
@@ -410,22 +443,46 @@ by_year <- transactions %>%
 If you need to remove grouping, and return to operations on ungrouped data, use ungroup().
 
 ```{r}
-by_year %>% 
+by_group %>% 
   ungroup() %>%             # no longer grouped by year, county and area
-  summarise(N = sum(transactions))
+  summarise(n = n())
 ```
 
 ### Exercises
 
-1. Brainstorm at least 5 different ways to assess the typical delay characteristics of a group of flights. Consider the following scenarios:
+1. Using nycflights13 flights dataset, brainstorm at least 5 different ways to assess the typical delay characteristics of a group of flights. Consider the following scenarios:
 
   - A flight is 15 minutes early 50% of the time, and 15 minutes late 50% of the time.
 
+```{r}
+flights %>% 
+  group_by(flight) %>% 
+  summarise(d = mean(arr_delay == abs(15), na.rm = TRUE)) %>% 
+  filter(near(d, 0.5))
+```
+
   - A flight is always 10 minutes late.
+
+```{r}
+flights %>% 
+  group_by(flight) %>% 
+  summarise(d = mean(arr_delay == 10, na.rm = TRUE)) %>% 
+  filter(near(d, 1))
+```
 
   - A flight is 30 minutes early 50% of the time, and 30 minutes late 50% of the time.
 
   - 99% of the time a flight is on time. 1% of the time it’s 2 hours late.
+
+```{r}
+flights %>% 
+  group_by(flight) %>% 
+  summarise(d120 = mean(dep_delay >= 120, na.rm = TRUE),
+            ontime = mean(near(dep_delay, 0), na.rm = TRUE)) %>% 
+  # filter(ontime >= 0.5) %>% 
+  arrange(desc(d120))
+```
+
 
   - Which is more important: arrival delay or departure delay?
 
@@ -443,30 +500,45 @@ by_year %>%
 
 Grouping is most useful in conjunction with summarise(), but you can also do convenient operations with mutate() and filter():
 
-- Find the best (#1) month for each apartment type:
+- Find the largest (#1) virus(es) for each subgroup:
 
 ```{r}
-transactions %>% 
-  group_by(area) %>% 
-  filter(rank(desc(transactions)) == 1)
+viruses %>% 
+  group_by(subgroup) %>% 
+  filter(min_rank(desc(size_kb)) == 1)
 ```
 
-Nothing beats Oct-Dec 2005...
-
-- Find all groups bigger than a threshold:
+- Find all groups with average bigger than a threshold:
 
 ```{r}
-transactions %>% 
-  group_by(year, county, area) %>% 
-  filter(sum(transactions) > 1000)
+viruses %>% 
+  group_by(group, subgroup) %>% 
+  filter(mean(size_kb) > 1000)
 ```
 
 - Standardise to compute per group metrics:
+
+Here we 
 ```{r}
-year %>%
-  mutate(prop_trans = n / sum(n))
+size_norm <- viruses %>%
+  group_by(group, subgroup) %>% 
+  transmute(size_diff = size_kb - mean(size_kb))
 ```
 
-The number of transactions was highest in ...
+We can verify that now, group means are almost zero:
+```{r}
+size_norm %>% 
+  group_by(group, subgroup) %>% 
+  summarise(Mean = mean(size_diff)) %>% 
+  filter(near(Mean, 0))
+```
+
+
+```{r}
+size_norm %>% 
+  ggplot() +
+  geom_boxplot(aes(x = subgroup, y = size_diff)) +
+  scale_y_log10()
+```
 
 
