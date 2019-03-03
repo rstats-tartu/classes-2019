@@ -25,4 +25,4 @@ hpv16 <- viruses %>%
   filter(str_detect(organism_name, "papilloma.+16"), str_detect(host, "human"))
 
 hadv <- viruses %>% 
-  filter(str_detect(organism_name, "adenov.+ 5$"), str_detect(host, "human")) %>% 
+  filter(str_detect(organism_name, "adenov.+ 5$"), str_detect(host, "human"))
