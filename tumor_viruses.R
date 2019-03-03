@@ -14,15 +14,15 @@ inimese T-raku leukeemia viirus (HTLV-I),retroviirus,9")
 tumor_viruses
 
 
-viruses <- mutate_if(viruses, is.character, str_to_lower) 
-hbv <- viruses %>% 
+viruses <- mutate_if(viruses, is.character, str_to_lower)
+hbv <- viruses %>%
   filter(str_detect(organism_name, "hepatitis b"), str_detect(host, "human"))
 
-merkel <- viruses %>% 
+merkel <- viruses %>%
   filter(str_detect(organism_name, "merkel"), str_detect(host, "human"))
 
-hpv16 <- viruses %>% 
+hpv16 <- viruses %>%
   filter(str_detect(organism_name, "papilloma.+16"), str_detect(host, "human"))
 
-hadv <- viruses %>% 
+hadv <- viruses %>%
   filter(str_detect(organism_name, "adenov.+ 5$"), str_detect(host, "human"))
