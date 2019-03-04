@@ -27,10 +27,12 @@ Here we learn:
 Let's start by loading tidyverse (meta) library which provides us with set of necessary packages to start with data analysis and visualisations. Importantly, also **ggplot2** library is loaded.
 
 ```{r}
+# library(ggplot2)
 library(tidyverse)
 ```
 
 As you can see, running this line of code loads eight different packages (libraries) and warns that some of the functions (filter(), lag()) that were just loaded into namespace have identical name to functions that were already present in namespace.
+
 These new functions masked old ones and, in case you want to use these masked functions, you need to call them explicitly by using package where it comes from `stats::filter()`.
 
 If you get error message "there is no package called 'tidyverse'", then you need to install this package and run again `library()`:
@@ -42,6 +44,7 @@ library(tidyverse)
 ## Data to visualise
 
 We need data to create plots! As for start, let's use **ggplot2** built in dataset *mpg* with fuel economy data from 1999 and 2008 for 38 models of car:
+
 ```{r}
 mpg # aka ggplot::mpg
 ```
@@ -61,7 +64,8 @@ Let's create simple scatter plot to explore relationship between fuel consumptio
 We put displ on the x-axis and hwy on the y-axis:
 
 ```{r}
-
+ggplot(data = mpg) + 
+  geom_point(mapping = aes(x = displ, y = hwy))
 ```
 
 
@@ -89,33 +93,36 @@ ggplot(data = <DATA>) +
 
 1. Run ggplot(data = mpg). What do you see?
 ```{r}
-
+ggplot(data = mpg)
 ```
 
 2. How many rows are in mpg dataset? How many columns? Run "mpg"
 ```{r}
-
+mpg
 ```
 
 
 3. What does the drv variable describe? Read help for ?mpg to find out.
 ```{r}
-
+?mpg
 ```
 
 4. Make scatterplot of *hwy* vs *cyl* using mpg data:
 ```{r}
-
+ggplot(data = mpg) +
+  geom_point(mapping = aes(x = hwy, y = cyl), position = position_jitter(width = 0.1, seed = 11))
 ```
 
 What happens if you add some noise to points? Hint: use geom_jitter instead
 ```{r}
-
+ggplot(data = mpg) +
+  geom_jitter(mapping = aes(x = hwy, y = cyl))
 ```
 
 5. What happens when you make a scatterplot of *class* versus *drv* using mpg data:
 ```{r}
-
+ggplot(data = mpg) +
+  geom_point(mapping = aes(x = class, y = drv))
 ```
 
 Is such plot useful?
@@ -123,6 +130,7 @@ Is such plot useful?
 ## Aesthetic mappings
 
 hwy ~ displ scatterplot tells us that there is linear relationship between engine size and fuel consumption: bigger engines use more fuel and are therefore less efficient.
+
 Nevertheless, if we look at the cars with huge engines (>5L), it's apparent that there are some outliers (plot below) that perform better than cars in this engine class in general.
 
 What are those cars? Do they have something in common?
@@ -139,7 +147,8 @@ To better understand the nature of these outliers, we would like add more info p
 By mapping displ to x-axis and hwy to y-axis let's map additionally color of the points to class variable (color = class) in mpg dataset to reveal the class of each car:
 
 ```{r}
-
+ggplot(data = mpg) +
+  geom_point(mapping = aes(x = displ, y = hwy, color = class))
 ```
 
 We can see that most of the cars with large motors and somewhat better fuel efficiency belong to sports cars ("2seaters").
@@ -147,7 +156,8 @@ We can see that most of the cars with large motors and somewhat better fuel effi
 Recreate previous plot with class mapped to size of each point:
 
 ```{r}
-
+ggplot(data = mpg) +
+  geom_point(mapping = aes(x = displ, y = hwy, size = class))
 ```
 
 We get warning... seems its not a good idea. Why?
@@ -156,29 +166,30 @@ What's wrong with the next plot where we have four categories ("tiny", "small", 
 
 Here we create toy data frame where we have categorical variable diameter for four x values whereas y is all same. 
 ```{r}
-diameter <- data_frame(x = 1:4, y = 1, diameter = c("tiny", "small", "big", "very big"))
+diameter <- tibble(x = 1:4, y = 1, diameter = c("tiny", "small", "big", "very big"))
 diameter
 ```
 
 Create scatterplot y~x and map diameter to point **size**:
 ```{r}
-g
+ggplot(data = diameter) +
+  geom_point(mapping = aes(x = x, y = y, size = diameter))
 ```
 
 This plot should explain why it's generally not a good idea to map categorical variable to size aesthetic.
 
 ### Excercise
 
-1. Update code. Map *alpha* aesthetic to class:
+1. Update code. Map _**alpha**_ aesthetic to class:
 ```{r}
 ggplot(data = mpg) + 
-  geom_point(mapping = aes(x = displ, y = hwy))
+  geom_point(mapping = aes(x = displ, y = hwy, alpha = class))
 ```
 
 2. Update code. Map *shape* aesthetic to class. Update code so that there will be 7 shapes instead of default 6:
 ```{r}
 ggplot(data = mpg) + 
-  geom_point(mapping = aes(x = displ, y = hwy)) +
+  geom_point(mapping = aes(x = displ, y = hwy, shape = class)) +
   scale_shape_manual(values = 1:7)
 ```
 
@@ -188,19 +199,22 @@ Is everything OK with shapes?
 
 First print out starwars dataset:
 ```{r}
-
+starwars
 ```
 
 Make height~mass scatterplot and map one continuous variable to size:
 ```{r}
-
+ggplot(data = starwars) +
+  geom_point(mapping = aes(x = height, y = mass, size = birth_year))
 ```
 
 
 Extra: there is apparent outlier. Try using geom_label to add name to this point:
 
 ```{r}
-
+ggplot(data = starwars) +
+  geom_point(mapping = aes(x = height, y = mass, size = birth_year)) +
+  geom_label(mapping = aes(x = height, y = mass, label = name))
 ```
 
 (We can use a much nicer function geom_label_repel(), and map the birth year to color.)
@@ -214,7 +228,7 @@ You can change the appearance of your plot also manually: change the color or sh
 For example, let's suppose you want to make all points in plot blue in displ~hwy scatterplot using mpg data:
 ```{r}
 ggplot(data = mpg) +
-  geom_point(mapping = aes(x = displ, y = hwy), color = "blue") # try HEX code "#0000ff" or rgb(0,0,1)
+  geom_point(mapping = aes(x = displ, y = hwy), color = "#0000ff", size = 10) # try HEX code "#0000ff" or rgb(0,0,1)
 ```
 
 Here, the color is not connected to the variable in your dataset as it is assigned outside aes(), but it just changes the appearance of the plot. 
@@ -232,12 +246,17 @@ Examples!
 Update code: change size of all points:
 ```{r}
 ggplot(data = mpg) +
-  geom_point(mapping = aes(x = displ, y = hwy, color = class))
+  geom_point(mapping = aes(x = displ, y = hwy, color = class), size = 0.1)
 ```
 
 
 ### Shape codes
-While colors and sizes are intuitive, it seems impossible to remember available point shape codes in R. The quickest way out of this is to know how to generate an example plot of the first 25 shapes quickly. Numbers next to shapes denote R shape number.
+
+While colors and sizes are intuitive, it seems impossible to remember available point shape codes in R. 
+
+The quickest way out of this is to know how to generate an example plot of the first 25 shapes quickly. 
+
+Numbers next to shapes denote R shape number.
 
 ```{r}
 ggplot(data = data_frame(x = rep(1:5, 5), y = rep(5:1, each = 5), shape = c(0:24))) + 
@@ -249,13 +268,14 @@ ggplot(data = data_frame(x = rep(1:5, 5), y = rep(5:1, each = 5), shape = c(0:24
 ```
 
 Update code:
+
 - Let's map more than 6 shapes to class and 
 - use fill = "green", color = "blue", to change the appearance of the ALL points, and
 - adjust size of the ALL points (size = 3) for better visibility. 
 
 ```{r}
 ggplot(data = mpg) + 
-  geom_jitter(mapping = aes(x = displ, y = hwy, shape = class)) +
+  geom_jitter(mapping = aes(x = displ, y = hwy, shape = class), fill = "green", color = "blue", size = 3) +
   scale_shape_manual(values = c(16:19, 21:24))
 ```
 
@@ -266,7 +286,7 @@ Note the differences how fill and color work on different point shapes! Which is
 1. What's wrong with this plot? Why are points not blue? Can you fix the code?
 ```{r}
 ggplot(data = mpg) +
-  geom_point(mapping = aes(x = displ, y = hwy, color = "blue"))
+  geom_point(mapping = aes(x = displ, y = hwy), color = "blue")
 ```
 
 2. Which variables in mpg are categorical? Which variables are continuous? (type ?mpg to read the documentation for the dataset). How can you see when you run mpg?
