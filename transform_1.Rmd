@@ -18,9 +18,11 @@ In data analysis workflow you need to plot out data at two points:
 1. During **exploratory data analysis** where you learn to know your dataset and 
 2. **reporting** when you try to communicate what you have found. 
 
-However, data analysis is not a linear process, but an iterative process, where you go in circles number of times after you have done some "tweaking" (transformation and/or modeling) of your data. 
+Importantly, ata analysis is not a linear process, but an iterative process of data transformation, modeling and visualisation. 
 
-Here we add another stop to data analysis process: data transformation.
+
+
+Here we add another step to data analysis process: data transformation.
 
 In most cases you need to transform your data during analysis, because in real life you rarely start with a dataset that is in the right form for visualisation and modeling. 
 
