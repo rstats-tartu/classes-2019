@@ -13,7 +13,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 I our previous classes we were working with small and cleaned up **mgp** dataset to go through steps of creating some of the most common visualisation types. 
 
-In your data analysis workflow you need to plot out data at two points:
+In data analysis workflow you need to plot out data at two points:
 
 1. During **exploratory data analysis** where you learn to know your dataset and 
 2. **reporting** when you try to communicate what you have found. 
