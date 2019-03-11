@@ -163,7 +163,9 @@ near(1 / 49 * 49, 1)
 
 ### Logical operators
 
-Multiple comparisons within filter() function are combined with comma "," which means "and" (&). In case of "and" all comparisons must evaluate to TRUE for observations to be returned.
+Multiple comparisons within filter() function are combined with comma "," which means "and" (&). 
+
+In case of "and" all comparisons must evaluate to TRUE for observations to be returned.
 
 Together, logical (boolean) operators are:
 
@@ -171,12 +173,20 @@ Together, logical (boolean) operators are:
 - | is OR, 
 - ! is NOT
 
-The following code finds all viruses with genome info release date in 2019 OR in 2018, note that we use year function from lubridate package to extract year of release from date:
-```{r}
 
+
+The following code finds all viruses with genome info release date in 2019 OR in 2018, 
+note that we use year function from lubridate package to extract year of release from date:
+
+```{r}
+year(ymd("2017 08 27")) # lubridate library
+
+filter(viruses, year(release_date) == 2019 | year(release_date) == 2018)
 ```
 
-You can't write something like filter(flights, month == 11 | 12) and in case of numeric years this will give you wrong answer instead of Error, so be careful:
+You can't write something like filter(flights, month == 11 | 12) and in case of numeric 
+years this will give you wrong answer instead of Error, so be careful:
+
 ```{r, eval=FALSE}
 filter(viruses, year(release_date) == 2019 | 2018)
 ```
@@ -185,7 +195,12 @@ A useful short-hand for this problem is x %in% y. This will select every row whe
 
 Filter observations where year of release_date is 2019 or 2018:
 ```{r}
+filter(viruses, year(release_date) %in% c(2019, 2018))
+```
 
+What happens under the hood:
+```{r, eval=FALSE}
+year(viruses$release_date) %in% c(2019, 2018)
 ```
 
 
@@ -196,18 +211,40 @@ Remember that (De Morgan's law):
 
 
 For example, if you wanted to find viruses with genome sizes between 1 to 2 kb, you could use either of the following two filters, note that in the first case we are excluding viruses with genomes smaller than 1kb or bigger than 2kb:
+
 ```{r}
 filter(viruses, !(size_kb < 1 | size_kb > 2))
+```
+
+Previous expression can be rewritten like so:
+```{r}
+filter(viruses, !(size_kb < 1), !(size_kb > 2))
+```
+
+
+```{r}
 filter(viruses, size_kb >= 1, size_kb <= 2)
 ```
 
-Which one from these two is more explicit? Note that comma here in filter function between logical evaluations means "&".
+Which one from these three is more explicit? Note that comma here in filter function between logical evaluations means "&".
+
+"Small than", "bigger than" an "NOT":
+```{r}
+3 >= c(2, 3, 4)
+3 <= c(2, 3, 4)
+3 != c(2, 3, 4)
+```
+
+
+
 
 ### Missing values
 
 One important feature of R that can make comparison tricky are missing values, or NAs ("not availables"). 
 
-NA represents an unknown value so missing values are "contagious": almost any operation involving an unknown value will also be unknown.
+NA represents an unknown value so missing values are "contagious": 
+
+almost any operation involving an unknown value will also be unknown.
 
 ```{r}
 NA > 5
@@ -224,16 +261,17 @@ is.na(x)
 
 Let's use is.na() within filter to filter rows with missing GC content data (variable called "gc"):
 ```{r}
-
+filter(viruses, is.na(gc))
 ```
 
 Ok. Now we got all rows with missing gc... how would you change this code to really exclude these rows with missing data (Hint: !FALSE):
 ```{r}
-
+filter(viruses, !is.na(gc))
 ```
 
 
 There are other functions that remove rows with NA in any of the columns from your data frame and keep only "complete cases":
+
 ```{r}
 na.exclude(viruses)
 na.omit(viruses)
@@ -242,26 +280,33 @@ drop_na(viruses)
 
 ### Finding non-exact matches
 
-Often you find yourself in need to filter categorical variables based on some non-exact matching, for example when  
+Often you find yourself in need to filter categorical variables based on some non-exact matching, for example when 
+
 - values are too long,   
 - there are too many unique unkown values,   
 - some observations that belong to the same category have slightly different values (`foo bar` and `foo-bar` and `foobar`). 
 
 To solve this problem more elegantly, you can use regular expressions. (for help see ?`regular expression`)
 
-regular expressions are covered in *tidyverse* by the **stringr** package. The stringr function that is useful within filter is str_detect(). Although, stringr belongs to tidyverse, it is not loaded together with core tidyverse packages by default, so you need to load it separately.
+regular expressions are covered in *tidyverse* by the **stringr** package. 
+
+
+The stringr function that is useful within filter is str_detect(). Although, stringr belongs to tidyverse, it is not loaded together with core tidyverse packages by default, so you need to load it separately.
 
 
 ```{r}
 library(stringr)
-str_detect(c("banana","foo bar", "foo-bar", "foobar"), "foo.?bar")
+fruits <- c("banana", "foo TRUMP bar", "foo bar", "foo-bar", "foobar", "foo")
+str_detect(fruits, "foo(.*)?bar")
 ```
 
 As you can see, str_detect() returns logical vector.
 
 So how this should work when you run str_detect inside filter?
-```{r}
 
+Salmonalla viruses:
+```{r}
+filter(viruses, str_detect(organism_name, "Salmonella"))
 ```
 
 
