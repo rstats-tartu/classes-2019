@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # History files
 .Rhistory
 .Rapp.history
@@ -32,3 +33,10 @@ vignettes/*.pdf
 *.utf8.md
 *.knit.md
 .Rproj.user
+=======
+.Rproj.user
+.Rhistory
+.RData
+.Ruserdata
+*.html
+>>>>>>> ada6f372a5961fa2acd689abda4bfd0e87d324f2

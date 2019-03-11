@@ -39,7 +39,10 @@ We are going to use the dplyr library from tidyverse to learn how to carry out t
 
 ## Sources
 
-Again, we are going to follow closely R4DS book chapter "Data transformation" available from http://r4ds.had.co.nz/transform.html. More examples are available from https://rstats-tartu.github.io/lectures/tidyverse.html#dplyr-ja-selle-viis-verbi
+Again, we are going to follow closely R4DS book chapter "Data transformation" available 
+
+- from http://r4ds.had.co.nz/transform.html.    
+- More examples are available from https://rstats-tartu.github.io/lectures/tidyverse.html#dplyr-ja-selle-viis-verbi
 
 
 Load tidyverse library and dataset:
@@ -54,10 +57,16 @@ library(here) # (always) locate files in your project folder P.S. load here afte
 
 Viruses data contains virus strain taxonomic and genome info, dataset was downloaded from NCBI. Please see README.md in data folder.
 
+
+```{r}
+download.file("https://raw.githubusercontent.com/rstats-tartu/datasets/master/viruses.csv", here("data", "viruses.csv"))
+```
+
 Let's import viruses.csv file from data subfolder: 
 ```{r}
 (viruses <- read_csv(here("data", "viruses.csv")))
 ```
+
 
 here() uses clever heuristics to identify your working directory and updates file paths respectively:
 
@@ -105,12 +114,14 @@ Together these properties make it easy to chain together multiple simple steps t
 
 ## Filter rows with filter()
 
-filter() allows you to subset observations based on their values. The first argument is the name of the data frame. The second and subsequent arguments are the expressions that filter the data frame. 
+filter() allows you to subset observations based on their values.
+
+The first argument is the name of the data frame. The second and subsequent arguments are the expressions that filter the data frame. 
 
 For example, we can filter bacterial viruses:
 
 ```{r}
-
+filter(viruses, host == "bacteria")
 ```
 
 dplyr runs the filtering operation and returns a new data frame. 
@@ -119,12 +130,14 @@ dplyr functions never modify their inputs, so if you want to save the result, yo
 
 Assign bacterial viruses to object phages:
 ```{r}
-
+phages <- filter(viruses, host == "bacteria")
+phages
 ```
 
 ### Comparisons
 
 What is this == operator? Why not use = to check equality:
+
 ```{r, eval=FALSE}
 filter(viruses, host = "bacteria")
 ```
@@ -134,6 +147,7 @@ It appears that = is another assignment operator besides ->
 There's another common problem you might encounter when using ==: floating point numbers. 
 
 Although, theoretically TRUE, following comparisons return FALSE!
+
 ```{r}
 sqrt(2) ^ 2 == 2
 1/49 * 49 == 1
