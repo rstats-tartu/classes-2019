@@ -351,23 +351,31 @@ filter(viruses, release_date > "1980-01-01", release_date < "1990-01-01")
 ```
 
 
+```{r}
+filter(viruses, str_detect(str_to_lower(organism_name), "enterovi"))
+```
+
+
 ## Arrange rows with arrange()
 
 arrange() works similarly to filter() except that instead of selecting rows, it changes their order.
 
-It takes a data frame and a set of column names to order by. If you provide more than one column name, each additional column will be used to break ties in the values of preceding columns:
+It takes a data frame and a set of column names to order by. 
+
+If you provide more than one column name, each additional column will be used to break ties in the values of preceding columns:
+
 ```{r}
 arrange(viruses, size_kb)
 ```
 
-Use desc() to re-order by a column in descending order:
+Use desc() to re-order by a column in descending order. You can combine variables:
 ```{r}
-
+arrange(viruses, organism_name, desc(size_kb))
 ```
 
 Missing values are always sorted at the end, even with desc() function:
 ```{r}
-df <- data_frame(x = c(5, NA, 2))
+df <- tibble(x = c(5, NA, 2))
 arrange(df, x)
 ```
 
@@ -394,20 +402,32 @@ Here we are... with distinct organism_name tax_id combinations.
 distinct(taxids)
 ```
 
+distinct() works on tables
+```{r}
+?distinct
+```
+
+unique() function from base R works on vectors
+```{r}
+x <- rep(letters[1:3], each = 3) # simulate character vector x with repetitions
+x
+unique(x) # select unique set of values from x
+```
+
 
 ### Exercises
 
 1. How could you use arrange() to sort viruses with missing gc values to the start? (Hint: use is.na()).
 
 ```{r}
-
+arrange(viruses, !is.na(gc))
 ```
 
 
-2. Sort viruses to find largest viruses:
+2. Sort viruses to find viruses with highest GC% content:
 
 ```{r}
-
+arrange(viruses, desc(gc))
 ```
 
 
@@ -422,27 +442,40 @@ select(viruses, 1:3)
 
 Select columns from group to host:
 ```{r}
-
+select(viruses, group:host)
+select(viruses, host:group)
 ```
 
 !!! select works in both directions: L>R and R<L!
+
+
+
 select organism_name, size_kb, gc:
 ```{r}
-
+select(viruses, organism_name, size_kb, gc)
 ```
 
 
 Exlude columns bioproject_accession, bioproject_id, segments:
 ```{r}
-
+select(viruses, -bioproject_accession, -bioproject_id, -segments)
 ```
 
-Another way, exclude as a vector:
+Another way, exclude as a vector, in case of vector use quoted variable names!:
 ```{r}
-
+vars_out <- c("bioproject_accession", "bioproject_id", "segments")
+select(viruses, -vars_out)
 ```
 
-Use minus sign to exclude variables! You can submit variables to select as character vector.
+This expression will fail, because we don't have objects called bioproject_accession etc in our R environment!
+```{r, eval=FALSE}
+vars_out <- c(bioproject_accession, bioproject_id, segments)
+```
+
+
+Use minus sign to exclude variables! 
+
+> Submit variables to select as character vector!
 
 
 There are a number of __helper functions you can use within select()__:
@@ -451,7 +484,7 @@ There are a number of __helper functions you can use within select()__:
 
 Select columns that start with "bio"
 ```{r}
-
+select(viruses, starts_with("bio"))
 ```
 
 
@@ -460,7 +493,7 @@ Select columns that start with "bio"
 
 Select columns that end with "date"
 ```{r}
-
+select(viruses, ends_with("date"))
 ```
 
 
@@ -468,31 +501,36 @@ Select columns that end with "date"
 
 All columns that contain word "project"
 ```{r}
-
+select(viruses, contains("project"))
 ```
 
 
-- matches("(.)\\1"): selects variables that match a regular expression. This one matches any variables that contain repeated characters. You'll learn more about regular expressions in strings.
+- matches("(.)\\1"): selects variables that match a regular expression. 
+
+This one matches any variables that contain repeated characters. You'll learn more about regular expressions in strings.
 
 ```{r, eval = FALSE}
-matches("^abc") # same as starts_with("abc)
-matches("xyz$") # same as ends_with("abc)
-matches("ijk") # same as contains("ijk)
+matches("^abc") # same as starts_with("abc")
+matches("xyz$") # same as ends_with("xyz")
+matches("ijk") # same as contains("ijk")
 ```
 
-
+Select columns/variables with punctuation marks: 
 ```{r}
 select(viruses, matches("[[:punct:]]"))
 ```
 
 
-- num_range("V", 1:3) matches V1, V2 and V3.
+- num_range("V", 1:10000) matches V1, V2 and V3.
+
 
 - everything() is useful if you have a handful of variables you'd like to move to the start of the data frame.
 
 Move columns tax_id, size_kb and gc to the start of the data frame, and keep all other columns.
-```{r}
 
+You can rearrange the order of columns.
+```{r}
+select(viruses, tax_id, size_kb, gc, everything())
 ```
 
 
@@ -504,11 +542,13 @@ See ?select for more details.
 1. What happens if you include the name of a variable (e.g. gc) multiple times in a select() call?
 
 ```{r}
-
+select(viruses, gc, gc, gc)
 ```
 
 
-2. What does the one_of() function do? Why might it be helpful in conjunction with this vector?
+2. What does the one_of() function do? 
+
+Why might it be helpful in conjunction with this vector?
 ```{r}
 (vars <- c("tax_id", "gc", "fffffff"))
 select(viruses, one_of(vars))
@@ -520,19 +560,12 @@ What happens if you try to select columns just by using this vector:
 select(viruses, c("tax_id", "gc", "fffffff"))
 ```
 
-3. Select all variables from 'diabetes' dataset that contain string 'BP' (note case!). 
-
-```{r}
-diabetes <- read_delim(here("data", "diabetes.csv"), delim = ";")
-diabetes
-```
-
+3. Select all variables from 'viruses' dataset that contain string 'GC' (note case!). 
 
 Does the result of running the following code surprise you? How do the select helpers deal with case by default? How can you change that default?
 
 ```{r}
 ?select
-diabetes_bp <- select(diabetes, contains("BP", ignore.case = FALSE))
-diabetes_bp
+select(viruses, contains("GC", ignore.case = TRUE))
 ```
 

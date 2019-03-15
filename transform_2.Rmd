@@ -29,7 +29,7 @@ viruses
 - mutate() allows you to modify or create new variables (columns) in a dataset.   
 - mutate works on vectors!   
 - mutate does not reduce/change the number of rows in tibble!   
-- mutate alway adds columns to the end of dataset
+- mutate always adds columns to the end of dataset
 
 Based on viruses dataset, there are not many questions that we would ask that need creation of new variables. 
 
@@ -37,38 +37,49 @@ However, based on genome size and number of genes and proteins we can calculate 
 
 Let's create smaller more focussed dataset by selecting organism_name, tax_id, size_kb, genes, proteins columns:
 ```{r}
-
+genes_kb <- select(viruses, organism_name, tax_id, size_kb, genes, proteins)
+genes_kb
 ```
 
 For start, we can see that some viruses have either genes or proteins missing. 
 
-We can create new variable where we fill in missing gene numbers with protein number if available:
+We can create a new variable where we fill in missing gene numbers with protein number if available:
 
 dplyr has function case_when() that vectorises multiple if and else if statements:
 
 ```{r}
-
+genes_kb <- mutate(genes_kb, 
+                   orfs = case_when(
+                     is.na(genes) ~ proteins,
+                     TRUE ~ genes
+                   ))
+genes_kb
 ```
 
-Here we created new variable "orfs" and assigned proteins number to it in cases where we had missing gene number. All other cases (TRUE) we assigned genes value to orfs.
+Here we created new variable "orfs" and assigned proteins number to it in cases where we had missing gene number. 
+
+
+All other cases (TRUE) we assigned genes value to orfs.
 
 Now we are ready to calculate number of orfs per kb (orfs / size_kb):
 
 ```{r}
+genes_kb <- mutate(genes_kb, orfs_kb = orfs / size_kb)
+genes_kb
+```
 
+Excercise: plot distribution of orfs / size_kb (try out log scale on x axis):
+
+```{r}
+ggplot(data = genes_kb) +
+  geom_histogram(aes(orfs_kb), bins = 30) +
+  scale_x_log10()
 ```
 
 
 There is also transmute (?transmute) a close cousin of mutate that drops all other columns except the new modified column: 
 ```{r}
-transmute(orf_density, orfs_kb = orfs / size_kb)
-```
-
-
-Excercise: plot distribution of orfs / size_kb (try out log scale on x axis):
-
-```{r}
-
+transmute(genes_kb, orfs_kb = orfs / size_kb)
 ```
 
 
@@ -86,15 +97,17 @@ Arithmetic operators are also useful in conjunction with the aggregate functions
 
 For example, x / sum(x) calculates the proportion of a total, and y - mean(y) computes the difference from the mean.
 
-Let's calculate the difference of gc values from the global mean:
+Let's calculate the difference of gc values from the global mean, name new variable gc_diff:
 ```{r}
-
+mutate(viruses, gc_diff = gc - mean(gc, na.rm = TRUE))
 ```
 
 
 - Modular arithmetic: %/% (integer division) and %% (remainder, modulus), where x == y * (x %/% y) + (x %% y). 
 
-Modular arithmetic is a handy tool because it allows you to break integers up into pieces. For example, in the tidyverse flights dataset, you can compute hour and minute from dep_time with:
+Modular arithmetic is a handy tool because it allows you to break integers up into pieces. 
+
+For example, in the tidyverse flights dataset, you can compute hour and minute from dep_time with:
 
 To demonstrate modulo and integer division, let's quickly introduce new dataset:
 ```{r}
@@ -117,8 +130,17 @@ To demonstrate logs in action, we can look at the virus genome size.
 
 First, let's plot distribution of virus genomes on linear scale:
 
-```{r}
 
+```{r}
+ggplot(viruses) +
+  geom_histogram(aes(size_kb), bins = 30) +
+  scale_y_log10()
+```
+
+Here we use transmute to focus on genome size:
+```{r}
+viruses_log <- transmute(viruses, size_kb, log_size = log10(size_kb))
+viruses_log
 ```
 
 Seems that they are not normally distributed... and most of the values are concentrated at the left side.
@@ -130,7 +152,8 @@ Then we use mutate to log transform size_kb.
 Finally, plot out new distribution.
 
 ```{r}
-
+ggplot(viruses_log) +
+  geom_histogram(aes(log_size), bins = 30)
 ```
 
 tip: Add some small amount to zeros
@@ -138,17 +161,34 @@ tip: Add some small amount to zeros
 log(0 + 0.01)
 ```
 
+We have vectorized function:
+```{r}
+x <- 1:10
+x
+log10(x)
+```
 
-- Offsets: lead() and lag() allow you to refer to leading or lagging values. This allows you to compute running differences (e.g. x - lag(x)) or find when values change (x != lag(x)).
+
+- Offsets: lead() and lag() allow you to refer to leading or lagging values. 
+
+This allows you to compute running differences (e.g. x - lag(x)) or find when values change (x != lag(x)).
 
 ```{r}
 (x <- 1:10)
 lag(x)
 ?lag
 lead(x)
+diff(x) # output is length - 1 !!!!
+diff(c(2,3,5))
 ```
 
-- Cumulative and rolling aggregates: R provides functions for running sums, products, mins and maxes: cumsum(), cumprod(), cummin(), cummax(); 
+- Cumulative and rolling aggregates: R provides functions for running sums, products, mins and maxes: 
+
+cumsum(), 
+cumprod(), 
+cummin(), 
+cummax(); 
+
 and dplyr provides cummean() for cumulative means.
 
 ```{r}
@@ -182,11 +222,39 @@ cume_dist(y)
 
 ### Exercises
 
-- Currently dep_time and sched_dep_time are convenient to look at, but hard to compute with because they're not really continuous numbers. Convert them to a more convenient representation of number of minutes since midnight.
+- Currently dep_time and sched_dep_time are convenient to look at, but hard to compute with because they're not really continuous numbers. 
+
+Convert them to a more convenient representation of number of minutes since midnight.
 
 ```{r}
 flights %>% 
-  select(dep_time, sched_dep_time)
+  select(dep_time, sched_dep_time) %>%
+  transmute(
+    dep_time = ((dep_time %/% 100) * 60) + (dep_time %% 100),
+    sched_dep_time = ((sched_dep_time %/% 100) * 60) + (sched_dep_time %% 100)
+  )
+```
+
+Reuse your code in functions:
+```{r}
+minutes_from_midnight <- function(x) {
+  ((x %/% 100) * 60) + (x %% 100)
+}
+```
+
+```{r}
+flights %>% 
+  select(dep_time, sched_dep_time) %>%
+  transmute(
+    dep_time = minutes_from_midnight(dep_time),
+    sched_dep_time = minutes_from_midnight(sched_dep_time)
+  )
+```
+
+```{r}
+flights %>% 
+  select(dep_time, sched_dep_time) %>%
+  transmute_at(vars(dep_time, sched_dep_time), minutes_from_midnight)
 ```
 
 
