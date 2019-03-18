@@ -281,18 +281,39 @@ For example, if we applied exactly the same code to a data frame grouped by (sub
 
 First, we create grouped by table
 ```{r}
-
+viruses %>% 
+  group_by(., group) %>% 
+  summarise(., size_kb = mean(size_kb, na.rm = TRUE))
 ```
+
+Alternatively, previous code can be rewritten like so:
+
+First, we create a grouped table:
+```{r}
+viruses_group <- group_by(viruses, group)
+viruses_group
+```
+
+
 
 Grouping info is silently written into tibble!
 
 Then, by using grouped table calculate summary as previously:
 ```{r}
-
+summarise(viruses_group, size_kb = mean(size_kb))
 ```
 
 
 > Together group_by() and summarise() provide one of the main tool that you'll use most frequently when working with dplyr: grouped summaries. 
+
+You can also use group_by atogether with mutate()!
+
+Example of grouped mutate:
+
+```{r}
+transmute(viruses_group, size_kb, diffs = size_kb - mean(size_kb))
+```
+
 
 ## Combining multiple operations with the pipe
 
@@ -309,12 +330,10 @@ arrange(dsdna_sizes, desc(size_kb))
 
 Visualise summarised data by bargraph: 
 ```{r}
-ggplot(dsdna_sizes) +
-  geom_bar(aes(x = reorder(str_replace(subgroup, "viridae", ""), desc(size_kb)), 
-               y = size_kb), 
-           stat = "identity") +
-  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1),
-        axis.title.x = element_blank())
+ggplot(data = dsdna_sizes) +
+  geom_col(aes(x = reorder(str_replace(subgroup, "viridae", ""), desc(size_kb)), y = size_kb)) +
+  labs(x = "Virus subgroup") +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))
 ```
 
 
@@ -327,20 +346,28 @@ There are four steps to prepare this data:
 
 - Filter to include only dsDNA viruses.
 
-- we arranged rowws so that viruses with biggest genomes show on top
+- we arranged rows so that viruses with biggest genomes show on top.
 
 
-This code is a little frustrating to write because we have to give each intermediate data frame a name, even though we don't care about it. Naming things is hard, so this slows down our analysis.
+This code is a little frustrating to write because we have to give each intermediate data frame a name, even though we don't care about it. 
+
+Naming things is hard, so this slows down our analysis.
 
 There's another way to tackle the same problem with the pipe, %>%:
 
 Previous code with pipes:
 ```{r}
-
+viruses %>% 
+  group_by(subgroup, group) %>% 
+  summarise(size_kb = mean(size_kb, na.rm = TRUE)) %>% 
+  filter(str_detect(group, "dsDNA")) %>% 
+  arrange(desc(size_kb))
 ```
 
 
-This focuses on the transformations, not what's being transformed, which makes the code easier to read. You can read it as a series of imperative statements: group, then summarise, then filter and arrange. 
+This focuses on the transformations, not what's being transformed, which makes the code easier to read. 
+
+You can read it as a series of imperative statements: group, then summarise, then filter and arrange. 
 
 As suggested by this reading, a good way to pronounce %>% when reading code is "then".
 
@@ -352,7 +379,10 @@ Whenever you do any aggregation, it's always a good idea to include either a cou
 
 Calculate mean size_kb per group and subgroup and **count number of rows in each group**:
 ```{r}
-
+viruses %>% 
+  group_by(subgroup, group) %>% 
+  summarise(size_kb = mean(size_kb, na.rm = TRUE),
+            n = n())
 ```
 
 
@@ -364,11 +394,20 @@ R provides many useful summary functions:
 
 - Measures of spread: sd(x), IQR(x), mad(x). 
 
-The mean squared deviation, or standard deviation or sd for short, is the standard measure of spread. The interquartile range IQR() and median absolute deviation mad(x) are robust equivalents that may be more useful if you have outliers
+The mean squared deviation, or standard deviation or sd for short, is the standard measure of spread. 
 
+The interquartile range IQR() and median absolute deviation mad(x) are robust equivalents that may be more useful if you have outliers
+
+Calculate these five summary stats for size_kb:
 ```{r}
 viruses %>% 
-  group_by(subgroup, group)
+  group_by(subgroup, group) %>% 
+  summarise(Mean = mean(size_kb),
+            Median = median(size_kb),
+            q0.5 = quantile(size_kb, 0.5),
+            SD = sd(size_kb),
+            iqr = IQR(size_kb),
+            MAD = mad(size_kb))
 ```
 
 - Measures of rank: min(x), quantile(x, 0.25), max(x). Quantiles are a generalisation of the median. 
@@ -383,13 +422,6 @@ viruses %>%
             size_diff = size_max - size_min,
             n = n())
 ```
-
-Now we can explore relationship between size variation (size_diff) and number of taxons in a subgroup:
-
-```{r}
-ggplot()
-```
-
 
 
 - Measures of position: first(x), nth(x, 2), last(x). 
@@ -411,15 +443,19 @@ not_cancelled %>%
 
 - Counts: You've seen n(), which takes no arguments, and returns the size of the current group. 
 
-To count the number of non-missing values, use sum(!is.na(x)). To count the number of distinct (unique) values, use n_distinct(x).
+To count the number of non-missing values, use sum(!is.na(x)). 
+
+To count the number of distinct (unique) values, use n_distinct(x).
 
 ```{r}
 # Which destinations have the most carriers?
 not_cancelled %>% 
   group_by(dest) %>% 
-  summarise(carriers = n_distinct(carrier)) %>% 
+  summarise(carriers = n_distinct(carrier),
+            carriers_old_way = length(unique(carrier))) %>% 
   arrange(desc(carriers))
 ```
+
 
 Counts are so useful that dplyr provides a simple helper if all you want is a count. 
 
@@ -433,12 +469,16 @@ viruses %>%
 - Counts and proportions of logical values: sum(x > 10), mean(y == 0). 
 
 When used with numeric functions, TRUE is converted to 1 and FALSE to 0. 
+
 This makes sum() and mean() very useful: sum(x) gives the number of TRUEs in x, and mean(x) gives the proportion.
 
 Number and proportion of genomes of size_kb > 5 in each subgroup:
 
 ```{r}
-
+viruses %>% 
+  group_by(subgroup) %>% 
+  summarise(n = sum(size_kb > 5),
+            p = mean(size_kb > 5))
 ```
 
 ## Grouping by multiple variables
