@@ -262,17 +262,79 @@ y[["ch"]]
 
 ## Iteration with purrr
 
-Iteration handles code duplication in cases where you need to apply same transformation or function to many splits of datasets.
+Iteration handles code duplication in cases when you need to do same thing to multiple inputs.
 
-1. Reducing code duplication improves readability and makes easier to see the intent of your code becuse your eyes are drawn to what's different, not what's always the same.
+Reducing of code duplication is desirable, because
+
+1. It improves code readability and makes easier to see the intent of your code because your eyes are drawn to what's different, not what's always the same.
 
 2. It is easier to update and debug your code, because you need to do changes in only one place.
 
-3. As result of previous points, You are likely to have fewer bugs. 
+3. You are likely to have fewer bugs. 
 
-Reducing duplication is achieved by use of functions, either generic (mean etc) or custom, and by iteration, when you need to do same thing to multiple inputs, repeating the same operation on different columns or datasets/-splits.
+Reducing duplication is achieved by **use of functions**, either generic (mean etc) or custom, and **by iteration** (repetition) of the same operation on different columns or datasets/-splits.
+
+Generally iteration is solved by using loops, but loops are verbose. 
+
+Base R has apply family functions to wrap loops into verbs:
+- `apply(df, 1, mean)`
+- `lapply(x, mean)`
+- `sapply(x, mean)`
+
+But tidyverse has **purrr** package that contains map() family functions to loop over vectors and lists. 
 
 
-**purrr** package contains functions to loop over a vector
+There is different function for each type of input:
+
+- map() outputs list
+- map_lgl() outputs logical vector
+- map_int() outputs integer vector
+- map_dbl() outputs double vector
+- map_chr() outputs character vector
+- map_df() outputs dataframe
+
+Each function takes vector as input applies function to each element of the vector and outputs new vector with same length (and names) as the input.
+
+
+The main benefit of using map() functions over loops is not speed but code clarity.
+
+
+Let's see how they work.
+```{r}
+df <- tibble(
+  a = rnorm(10),
+  b = rnorm(10, 1),
+  c = rnorm(10, 2),
+  d = rnorm(10, 3)
+)
+```
+
+Here we calculate column means over data frame:
+```{r}
+map_dbl(df, mean)
+```
+
+Previous code could be replaced by dplyr summarise functions, at least when input is a dataframe.
+
+Here we have list:
+```{r}
+x <- list(
+  a = rnorm(10),
+  b = rnorm(10, 1),
+  c = rnorm(10, 2),
+  d = rnorm(10, 3)
+)
+map_dbl(x, mean) # map_dbl returns vector
+map(x, mean) # returns list
+```
+
+You can use map_*() functions that output atomic vector when function returns single value. 
+
+Additional arguments can be passed to functions via ellipsis (...):
+
+Let's pass na.rm=TRUE to mean function (in this example nothing changes because we have no NAs in out data):
+```{r}
+map_dbl(x, mean, na.rm = TRUE)
+```
 
 
