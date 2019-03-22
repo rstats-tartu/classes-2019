@@ -260,3 +260,19 @@ y$ch
 y[["ch"]]
 ```
 
+## Iteration with purrr
+
+Iteration handles code duplication in cases where you need to apply same transformation or function to many splits of datasets.
+
+1. Reducing code duplication improves readability and makes easier to see the intent of your code becuse your eyes are drawn to what's different, not what's always the same.
+
+2. It is easier to update and debug your code, because you need to do changes in only one place.
+
+3. As result of previous points, You are likely to have fewer bugs. 
+
+Reducing duplication is achieved by use of functions, either generic (mean etc) or custom, and by iteration, when you need to do same thing to multiple inputs, repeating the same operation on different columns or datasets/-splits.
+
+
+**purrr** package contains functions to loop over a vector
+
+
