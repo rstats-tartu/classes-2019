@@ -15,10 +15,12 @@ library(tidyverse)
 ```
 
 Vectors are basic R data structures, even single value (scalar) is a vector (with lenght 1) or you can have empty vector (with lenght 0). 
+
 You can have two-dimentional vectors -- matixes.
 data frames consist of vectors bound column wise. 
 
 There are two types of vectors:
+
 - atomic vectors: most frequent types that you encounter are *logical*, *integer*, *double*, *character*. 
 - lists can contain any type of R data structure (including lists).
 
@@ -161,7 +163,100 @@ And you will get warning if longer vector is not a multiple of shorter vector:
 Importantly, tidyverse functions will throw an error if recycling other than sclar:
 
 ```{r, eval=FALSE}
-tibble(a = 1:10, b = 1:2)
+tibble(
+  a = 1:4, 
+  b = 1:2
+  )
 ```
 
+If you need to recycle in tidyverse, specify it explicitly with rep() function:
+```{r}
+tibble(
+  a = 1:4, 
+  b = rep(1:2, 2)
+  )
+```
+
+
+#### Naming vectors
+
+All types of vectors can be named:
+```{r}
+c(a = 1, b = 2, c = 3)
+```
+
+or by using purrr::set_names()
+```{r}
+purrr::set_names(1:3, nm = c("a", "b", "c"))
+```
+
+purrr::set_names() can be used within pipe!
+
+
+#### Subsetting
+
+Examples:
+```{r}
+
+```
+
+
+### Lists
+
+List are complex vectors, because they can contain other lists.
+Lists can be used to represent hierarchical structures.
+
+
+List is created by list() function:
+```{r}
+list(1, 2, 3)
+```
+
+
+structure of a list can be viewed with str() command:
+```{r}
+str(list(1, 2, 3))
+```
+
+List can contain different type of objects:
+```{r}
+y <- list(do = 3.1, int = 1L, lo = TRUE, ch = month.abb, li = list(1, 2, 3))
+str(y)
+```
+
+#### Subsetting lists
+
+There are three ways to subset a list:
+
+- "[" extracts a sublist, result is always a list
+
+```{r}
+y[c(1, 4)]
+```
+
+
+```{r}
+str(y[c(1, 4)])
+```
+
+- "[[" extracts single list element and it removes one level of hierarchy from the list:
+
+```{r}
+y[[1]]
+```
+
+```{r}
+y[[4]]
+```
+
+- "$" is a shorthand for extracting names elements of a list. It works similarly to [[ except you don't need use quotes:
+
+```{r}
+y$ch
+```
+
+
+```{r}
+y[["ch"]]
+```
 
