@@ -26,7 +26,6 @@ Fitted model can look something like y = 30 + 3 * x.
 library(tidyverse)
 library(broom)
 library(modelr)
-library(viridis)
 ```
 
 
