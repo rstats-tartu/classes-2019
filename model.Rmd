@@ -1,0 +1,241 @@
+---
+title: "Model"
+date: "2019-03-25"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Linear models
+
+```{r}
+library(tidyverse)
+library(broom)
+library(modelr)
+library(viridis)
+```
+
+
+First, lets have 1:1 relationship between dependent (y) and independent variable (x).
+
+Simplest model y = x where Intercept is always set to 0 and slope = 1.
+
+Generate data:
+
+```{r}
+x <- 0:100
+y <- x
+```
+
+
+Plot:
+
+```{r}
+tibble(x, y) %>% 
+  ggplot() +
+  geom_line(aes(x, y))
+```
+
+Let's add variable Intercept to the model.
+
+y = a + x
+
+Lets assign random value 30 to a:
+
+```{r}
+x <- 0:100 
+a <- 30
+y <- a + x
+```
+
+
+
+```{r}
+tibble(x, y) %>% 
+  ggplot() +
+  geom_line(aes(x, y)) +
+  geom_abline(slope = 1, intercept = 0, linetype = "dashed")
+```
+
+Intercept determines y value when x = 0.
+
+What happens when we multiply x with constant instead of addition:
+
+y =  b * x
+
+Let's assign random value 3 to b.
+
+```{r}
+x <- 0:200
+b <- 3
+y <- b * x
+```
+
+
+```{r}
+tibble(x, y) %>% 
+  ggplot() +
+  geom_line(aes(x, y)) +
+  geom_abline(intercept = 0, slope = 1, linetype = "dashed")
+```
+
+Now we changed slope of the line, which specifies how much y changes when x changes 1 unit.
+When b = 3, then x increases by 1 then y increas by 3 units.
+
+Full simple linear formula with si
+
+y = a + b * x
+
+Selleks lisame mudelisse kaks parameetrit, lõikepunkt (a) ja tõus (b). 
+Kui $a = 0$ ja $b = 1$, saame me eelpool kirjeldatud mudeli $y = x$. 
+Kui $a = 102$, siis sirge lõikab y-telge väärtusel 102. 
+Kui $b = 0.8$, siis x-i tõustes 1 ühiku võrra tõuseb y-i väärtus 0.8 ühiku võrra.
+Kui $a = 100$ ja $b = 0$, siis saame sirge, mis on paraleelne x-teljega ja lõikab y-telge väärtusel 100. 
+Seega, teades a ja b väärtusi ning omistades x-le suvalise meid huvitava väärtuse, saab ennustada y-i keskmist väärtust sellel x-i väärtusel. 
+Näiteks, olgu andmete vastu fititud mudel pikkus(cm) = 102 + 0.8 * kaal(kg) ehk 
+
+$$y = 102 + 0.8 \times x$$ 
+
+Omistades nüüd kaalule väärtuse 80 kg, tuleb mudeli poolt ennustatud keskmine pikkus 102 + 0.8 * 80 = 166 cm. 
+Iga kg lisakaalu ennustab mudeli kohaselt 0.8 cm võrra suuremat pikkust.
+
+
+```{r}
+a <- 102
+b <- 0.8
+x <-  0:100 
+y <-  a + b * x
+```
+
+
+```{r, fig.cap='Lineaarne mudel, millel on tuunitud nii lõikepunkt kui tõus.'}
+plot(y ~ x, xlab = "Weight in kg", ylab = "Heigth in cm", ylim = c(50, 200), type = "l", main = bquote(y == 102 + 0.8 %*% x))
+```
+
+
+
+See mudel ennustab, et 0 kaalu juures on pikku 102 cm, mis on rumal, aga mudelite puhul tavaline olukord. Sellel olukorral on mitmeid põhjusi:
+
++ Me tuunime mudelit andmete peal, mis ei sisalda 0-kaalu. 
+
++ Meie valimiandmed ei peegelda täpselt inimpopulatsiooni. 
+
++ Sirge mudel ei peegelda täpselt pikkuse-kaalu suhteid vahemikus, kus meil on reaalseid kaaluandmeid; ja ta teeb seda veelgi vähem seal, kus meil mõõdetud kaalusid ei ole. 
+
+Seega pole mõtet imestada, miks mudeli intercept meie üle irvitab.  
+
+
+Kahe parameetriga sirge mudel ongi see, mida me fitime kahedimensiooniliste andmetega.
+
+Näiteks nii, kasutame R-i "iris" andmesetti:
+```{r}
+# Fit a linear model and name the model object as m
+m <- lm(Sepal.Length ~ Petal.Length, data = iris)
+```
+
+
+```{r, fig.cap='Fititud mudel, kus muutuja Petal.Length järgi ennustatakse muutuja Sepal.Length väärtusi.'}
+# Make a scatter plot, colored by the var called "Species"
+# Draw the fitted regression line from m
+augment(m, iris) %>% 
+  ggplot(aes(Petal.Length, Sepal.Length, color = Species)) +
+  geom_point() +
+  geom_line(aes(y = .fitted), color = 1) +
+  labs(title = "Sepal.Length ~ Petal.Length") +
+  scale_color_viridis(discrete = TRUE)
+```
+
+Mudeli fittimine tähendab siin lihtsalt, et sirge on 2D ruumi asetatud nii, et see oleks võimalikult lähedal kõikidele punktidele.
+
+> Oletame, et meil on n andmepunkti ja et me fitime neile sirge. Nüüd plotime fititud sirge koos punktidega ja tõmbame igast punktist mudelsirgeni joone, mis on paraleelne y-teljega. Seejärel mõõdame nende n joone pikkused. Olgu need pikkused a, b, ... i. `lm()` funktsioon fitib sirge niimoodi, et summa $a^2 + b^2 + ... + i^2$ oleks minimaalne. Seda kutsutakse vähimruutude meetodiks.
+
+Mudeli koefitsientide väärtused saame kasutades funktsiooni `coef()`:
+```{r}
+coef(m)
+```
+
+Siin a = (Intercept) ja b = Petal.Length ehk 0.41.
+
+## Ennustus lineaarsest mudelist 
+
+Anname x-le rea väärtusi, et ennustada y keskmisi väärtusi nendel x-i väärtustel. 
+Siin me ennustame y (Sepal_length) keskväärtusi erinevatel x-i (Petal_length) väärtustel, mitte individuaalseid Sepal_length väärtusi. Me kasutame selleks deterministlikku mudelit kujul Sepal_length =  a + b*Petal_length. Hiljem õpime ka bayesiaanlike meetoditega individuaalseid Sepal_length-e ennustama. 
+
+Järgnev kood on sisuliselt sama, millega me üle-eelmisel plotil joonistasime mudeli y = a + bx. 
+Me fikseerime mudeli koefitsiendid fititud irise mudeli omadega ja anname Petal_length muutujale 10 erinevat väärtust originaalse muutuja mõõtmisvahemikus. 
+Aga sama hästi võiksime ekstrapoleerida ja küsida, mis on oodatav Sepal_length, kui Petal_length on 100 cm? 
+Sellele küsimusele on ebareaalne vastus, aga mudel ei tea seda. 
+Proovi, mis vastus tuleb.
+
+```{r }
+## Genereerime uued andmed Petal.Length vahemikus
+Petal_length <- seq(min(iris$Petal.Length), 
+                    max(iris$Petal.Length), 
+                    length.out = 10)
+## Võtame mudeli koefitsendid
+a <- coef(m)[1]
+b <- coef(m)[2]
+## Kasutades mudeli koefitsente genereerime Sepal_length väärtused
+Sepal_length <-  a + b * Petal_length
+```
+
+
+```{r, fig.cap='Siin ennustasime kümme y väärtust x väärtuste põhjal..'}
+plot(Sepal_length ~ Petal_length, type = "b")
+```
+
+
+
+> Mudelist saab kahte tüüpi ennustusi: interpolatsioone (ennustus on samas skaalas, mis andmed, mille peal mudel fititi) ja ekstrapoleerimine (ennustus jääb väljaspoole andmeid). Sõltuvalt erialast me kas vaatame ekstrapoleerimisele viltu või leiame, et selline tegevus on otsesõnu keelatud.
+
+> Mudelist saab kahte tüüpi ennustusi: (1) saame ennustada Y keskmist väärtust X-i konkreetsel väärtusel ja (2) saame ennustada individuaalseid Y väärtusi X-i konkreetsel väärtusel. Viimase kohta vt ptk...
+
+## Neli mõistet
+
+Mudelis $y = a + bx$ on $x$ ja $y$ muutujad, ning $a$ ja $b$ on parameetrid. 
+Muutujate väärtused fikseeritakse andmetega, parameetrid fititakse andmete põhjal. 
+Fititud mudel valib kõikide võimalike seda tüüpi mudelite hulgast välja täpselt ühe unikaalse mudeli ja ennustab igale $x$-i väärtusele vastava kõige tõenäolisema $y$ väärtuse ($y$ keskväärtuse sellel $x$-i väärtusel).
+ 
+- Y --- mida me ennustame (*dependent variable, predicted variable*).
+ 
+- X --- mille põhjal me ennustame (*independent variable, predictor*).
+ 
+- Muutuja (variable) --- iga asi, mida me valimis mõõdame (X ja Y on kaks muutujat). Muutujal on sama palju fikseeritud väärtusi kui meil on selle muutuja kohta mõõtmisandmeid.
+ 
+- Parameeter (parameter) --- mudeli koefitsient, millele võib omistada suvalisi väärtusi. Parameetreid tuunides fitime mudeli võimalikult hästi sobituma andmetega.
+ 
+Mudel on matemaatilise formalism, mis püüab kirjeldada füüsikalist protsessi.
+Statistilise mudeli struktuuris on komponent, mis kirjeldab ideaalseid ennustusi (nn protsessi mudel) ja eraldi veakomponent (ehk veamudel), mis kirjeldab looduse varieeruvust nende ideaalsete ennustuste ümber. Mudeli koostisosad on (i) muutuja, mille väärtusi ennustatakse, (ii), muutuja(d), mille väärtuste põhjal ennustatakse, (iii) parameetrid, mille väärtused fititakse ii põhjal ja (iv) konstandid.  
+
+## Mudeli fittimine 
+
+Mudelid sisaldavad nii (1) matemaatilisi struktuure, mis määravad mudeli tüübi, kui (2) parameetreid, mida saab andmete põhjal tuunida, niiviisi täpsustades mudeli kuju ehk paiknemist matemaatlises ruumis. 
+Näiteks võrrand $y = a + bx$ määrab mudeli, kus $y = x$ on see struktuur, mis tagab, et mudeli tüüp on sirge, ning $a$ ja $b$ on parameetrid, mis määravad sirge asendi. 
+Seevastu struktuur $y = x + x^2$ tagab, et mudeli $y = a + b_1x + b_2x^2$  tüüp on parabool, ning parameetrite $a$, $b_1$ ja $b_2$ väärtused määravad selle parabooli täpse kuju. Ja nii edasi. 
+
+Mudeli parameetrite tuunimist nimetatakse mudeli fittimiseks. 
+Mudelit fittides on eesmärk saavutada antud tüüpi mudeli maksimaalne sobivus andmetega (kus "andmed" hõlmavad nii valimiandmeid kui taustateadmisi). Sellele tegevusele annab mõtte meie lootus, et mudeli tüüp kajastab mingit looduses toimuvat protsessi, mis meile teaduslikku huvi pakub. Ning, kuigi mudeli fit maksimeeritakse mudeli tüübi kohta, püüab see andmete vaatenurgast vaadatuna olla optimaalne, mitte maksimaalne (vt järgmine peatükk mudeli üle- ja alafittimisest). Kahjuks ei ole selline optimaalsus kuigi hästi matemaatilisse vormi valatav, ega ka mingi (pool)automaatse meetodiga empiiriliselt kontrollitav. Siin on tegu pigem teadlase sooviga, mille filosoofiline eeldus on, et meie andmetes on peidus nii andmeid genereeriva loodusliku protsessi üldine olemus (essents), kui juhuslik müra ehk valimiviga, ning et mudeli üldine kuju (sirge, parabool, jms) on juhtumisi sobiv just selleks, et neid kahte omavahel lahku ajada.   
+
+> Lineraarse mudeli parima sobivuse andmetega saab tagada kahel erineval viisil: (i) vähimruutude meetod (Legendre, 1805; Gauss, 1809) mõõdab y telje suunaliselt iga andmepunkti kauguse mudeli ennustusest, võtab selle kauguse ruutu, summeerib kauguste ruudud ning leiab sirge asendi, mille korral see summa on minimaalne; (ii) Bayesi teoreem (Laplace, 1774) annab väheinformatiivse priori korral praktiliselt sama fiti. Olulise erinevusena võtab vähimruutude meetod arvesse ainult valimiandmed, samas kui Bayesi teoreemi kasutades fitime mudeli koefitsiente nii valimiandmete kui taustateadmiste peal (vt 8. ptk).
+  
+Hea mudel on 
+ 
+1. Võimalikult lihtsa struktuuriga, mille põhjal on veel võimalik teha järeldusi protsessi kohta, mis genereeris mudeli fittimiseks kasutatud andmeid; 
+ 
+2. Sobitub piisavalt hästi andmetega (eriti uute andmetega, mida ei kasutatud selle mudeli fittimiseks), et olla relevantne andmeid genereeriva protsessi kirjeldus; 
+ 
+3. Genereerib usutavaid simuleeritud andmeid.
+ 
+Sageli fititkse samade andmetega mitu erinevat tüüpi mudelit ja püütakse otsustada, milline neist vastab kõige paremini eeltoodud tingimustele. 
+Näiteks, kui sirge suudab kaalu järgi pikkust ennustada paremini kui parabool, siis on sirge mudel paremas kooskõlas teadusliku hüpoteesiga, mis annaks mehhanismi protsessile, mille käigus kilode lisandumine viiks laias kaaluvahemikus inimeste pikkuse kasvule ilma, et pikkuse kasvu tempo kaalu tõustes langeks. Samas, see et me oleme oma andmeid fittinud n mudeliga ja otsustanud, et mõned neist on paremad kui teised, ei tähenda, et mõni meie mudelitest oleks hea ka võrdluses tegeliku looduses valitseva olukorraga. Mudelid on pelgalt matemmatilised formalismid, mis võivad, aga kindlasti ei pea, kajastama füüsikalist maailma, ja meie mudelitevalik sõltub meile jõukohasest matemaatikast. Siinkohal ei tasu unustada, et matemaatika kirjeldab eelkõige abstraktseid mustreid, mitte otse füüsikalist maailma.
+ 
+See, et teie andmed sobivad hästi mingi mudeliga, ei tähenda automaatselt, et see fakt oleks teaduslikult huvitav. 
+Mudeli parameetrid on mõtekad mudeli matemaatilise kirjelduse kontekstis, aga mitte tingimata suure maailma põhjusliku seletamise kontekstis. 
+Siiski, kui mudeli matemaatiline struktuur loodi andmeid genreeeriva loodusliku protsessi olemust silmas pidades, võib mudeli koefitsientide uurimisest selguda olulisi tõsiasju suure maailma kohta. 
+ 
+> Mudeli fittimine: X ja Y saavad oma väärtused otse andmetest; parameetrid võivad omandada ükskõik millise väärtuse.
+ 
+> Fititud mudelist ennustamine: X-le saab omistada ükskõik millise väärtuse; parameetrite väärtused on fikseeritud; Y väärtus arvutatakse mudelist.
+  
