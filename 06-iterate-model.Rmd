@@ -262,7 +262,7 @@ y[["ch"]]
 
 ## Iteration with purrr
 
-Iteration handles code duplication in cases when you need to do same thing to multiple inputs.
+Iteration handles code duplication in cases **when you need to do same thing to multiple inputs**.
 
 Reducing of code duplication is desirable, because
 
@@ -272,7 +272,9 @@ Reducing of code duplication is desirable, because
 
 3. You are likely to have fewer bugs. 
 
-Reducing duplication is achieved by **use of functions**, either generic (mean etc) or custom, and **by iteration** (repetition) of the same operation on different columns or datasets/-splits.
+
+
+Reducing duplication is achieved by 1) **use of functions**, either generic (mean etc) or custom, and 2) **by iteration** (repetition) of the same operation on different columns or datasets/-splits.
 
 Generally iteration is solved by using loops, but loops are verbose. 
 
@@ -281,10 +283,10 @@ Base R has apply family functions to wrap loops into verbs:
 - `lapply(x, mean)`
 - `sapply(x, mean)`
 
-But tidyverse has **purrr** package that contains map() family functions to loop over vectors and lists. 
 
+"tidyverse" has **purrr** package that contains map() family functions to loop over vectors and lists. 
 
-There is different function for each type of input:
+There is different map() function for each type of input:
 
 - map() outputs list
 - map_lgl() outputs logical vector
@@ -295,14 +297,19 @@ There is different function for each type of input:
 
 Each function takes vector as input applies function to each element of the vector and outputs new vector with same length (and names) as the input.
 
+```{r}
+?map
+```
+
 
 The main benefit of using map() functions over loops is not speed but code clarity.
 
+Let's see how they work. 
 
-Let's see how they work.
+Let's create toy data frame:
 ```{r}
-df <- tibble(
-  a = rnorm(10),
+tb <- tibble(
+  a = rnorm(10, 0),
   b = rnorm(10, 1),
   c = rnorm(10, 2),
   d = rnorm(10, 3)
@@ -311,22 +318,16 @@ df <- tibble(
 
 Here we calculate column means over data frame:
 ```{r}
-map_dbl(df, mean)
+map_dbl(tb, mean)
 ```
 
-Previous code could be replaced by dplyr summarise functions, at least when input is a dataframe.
+Previous code could be replaced by dplyr summarise functions, at least when input is a data frame.
 
-Here we have list:
+Nevertheless, tibble and data.frame is also a list:
 ```{r}
-x <- list(
-  a = rnorm(10),
-  b = rnorm(10, 1),
-  c = rnorm(10, 2),
-  d = rnorm(10, 3)
-)
-map_dbl(x, mean) # map_dbl returns vector
-map(x, mean) # returns list
+is.list(tb)
 ```
+
 
 You can use map_*() functions that output atomic vector when function returns single value. 
 
@@ -334,7 +335,124 @@ Additional arguments can be passed to functions via ellipsis (...):
 
 Let's pass na.rm=TRUE to mean function (in this example nothing changes because we have no NAs in out data):
 ```{r}
-map_dbl(x, mean, na.rm = TRUE)
+map_dbl(tb, mean, na.rm = TRUE)
 ```
 
+### Split data and map on the fly
+
+Load gapminder dataset from gapminder library
+```{r}
+library(gapminder)
+gapminder
+```
+
+gapminder contains Gapminder https://www.gapminder.org data on life expectancy, GDP per capita, and population by country.
+
+Split data by country and fit same linear model to all pices:
+
+```{r}
+models <- gapminder %>% 
+  split(.$country) %>% 
+  map(function(x) lm(lifeExp ~ year + gdpPercap, data = x))
+```
+
+Note that syntax to create anonymous function is quite verbose:
+```{r}
+function(x) lm(lifeExp ~ year + gdpPercap, data = x)
+```
+
+Whereas purrr allows to use one-sided formula as drop-in replacement:
+```{r}
+models <- gapminder %>% 
+  split(.$country) %>% 
+  map(~ lm(lifeExp ~ year + gdpPercap, data = .))
+```
+
+Let's have look at model summaries of all these models:
+
+First, we can extract r.squared component from model objects:
+```{r}
+models %>% 
+  map(summary) %>% 
+  map_dbl(~.$r.squared)
+```
+
+Or more conveniently with purrr, you can directly extract a named component:
+```{r}
+models %>% 
+  map(summary) %>% 
+  map_dbl("r.squared")
+```
+
+You can also use integers to extract elements by position:
+```{r}
+x <- list(list(1, 2, 3), list(4, 5, 6), list(7, 8, 9))
+x %>% map_dbl(2)
+```
+
+
+### Dealing with failure
+
+One bad apple can spoil the whole bunch. 
+
+If one out of many iterations fail, then you will get error message and no output. This is annoying, as one failure prevents you from accessing all successful calculations.
+
+purrr handles these situations with safely() function.
+
+safely() takes a function and returns its modified version wrapped into error handler. 
+
+safely-modified function will never throw an error, but returns a list with two with two elements:
+
+- result - the original result and in case of error NULL
+
+- error - error object and when operation was successful, returns NULL
+
+One of the list objects returned by safely is allways NULL
+
+Let's create safe log function:
+```{r}
+safe_log <- safely(log)
+```
+
+In case of success:
+```{r}
+safe_log(10)
+```
+
+In case of error:
+```{r}
+safe_log("a")
+```
+
+Safely works with map:
+```{r}
+x <- list(1, 10, "a")
+y <- x %>% map(safe_log)
+y
+```
+
+You can get then two lists one for results and the other one for errors with purrr::transpose()
+
+```{r}
+y <- y %>% transpose()
+y
+```
+
+Then you can subset good results:
+
+```{r}
+good <- y$error %>% map_lgl(is.null)
+x[!good] # bad apple in original data
+
+```
+
+Extract good results and flatten into numeric vector
+```{r}
+y$result[good] %>% flatten_dbl()
+```
+
+flatten functions remove one level of hierarchy from a list:
+```{r}
+?purrr::flatten
+```
 
