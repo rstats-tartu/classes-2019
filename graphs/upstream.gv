@@ -1,0 +1,21 @@
+digraph flowchart {
+      # node definitions with substituted label text
+      graph [layout = circo]
+      node [fontname = Helvetica, 
+            shape = rectangle, 
+            style = filled,
+            color = grey] 
+      edge [color = grey]
+      tab1 [label = '@@1', fillcolor = orange]
+      tab2 [label = '@@2', fillcolor = Mediumseagreen]
+      tab3 [label = '@@3', fillcolor = red]
+
+      # edge definitions with the node IDs
+      tab1 -> tab2 [label = 'fetch/pull']; 
+      tab2 -> tab3 [label = 'push']; 
+      tab3 -> tab2 [label = 'fetch/pull']
+      }
+
+      [1]: 'upstream: rstats-tartu/classes-2019'
+      [2]: 'your computer/classes-2019'
+      [3]: 'origin: user/classes-2019\n(forked from rstats-tartu/classes-2019)'
