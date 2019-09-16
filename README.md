@@ -16,3 +16,7 @@ Why visualisation matters slides: https://taltech19-visualisation-matters.netlif
 1. components and layers of ggplot plot, scatterplots, aesthetics: color, size, shape.
 
 2. facetting, combining different types of geoms, plotting statistical summaries.
+
+## Tidy-data
+
+

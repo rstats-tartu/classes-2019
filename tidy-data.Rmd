@@ -1,0 +1,391 @@
+---
+title: "Data import and tidy data"
+date: "2018-04-16"
+output: github_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Data import
+
+Working with data provided by R packages is a great way to learn the tools of data science, __but at some point you want to stop learning and start working with your own data__. 
+Now you will learn how to read plain-text rectangular files into R.
+
+## readr, readxl and fread
+
+We will have a look at two packages that you will most likely need most in your everyday work: "readr" and "readxl", and as a bonus also fread from "data.table". 
+
+- "readr" package is part of the core tidyverse. readr work on text-based, delimited files.
+- "readxl" is also part of the tidyverse. readxl supports both the legacy .xls format and the modern xml-based .xlsx format. There are other R packages for working with excel files. But compared to the other existing packages (e.g. gdata, xlsx, xlsReadWrite) readxl has no external dependencies. Having no external dependencies is a great bonus, considering that Java-dependent packages tend to hit memory limit during importing of large files and you need to deal with it.
+- fread() function from data.table package displays (1) superior speed during import (importand when working with large files ~1G+) and (2) guesses delimiter which is important when you have many files from multiple sources with unknown or unexpected column delimiters.
+
+```{r}
+library(tidyverse)
+```
+
+### readr
+
+Most of readr's functions are concerned with turning flat files into data frames:
+
+- read_csv() reads _comma_ delimited files, 
+- read_csv2() reads _semicolon_ separated files (common in countries where , is used as the decimal place), 
+- read_tsv() reads _tab_ delimited files, and 
+- read_delim() reads in files with _any delimiter_.
+
+The first argument to read_csv() is the most important: it's the path to the file to read.
+
+```{r}
+(index <- read_csv(file = "data/consumer_index.csv"))
+```
+
+When you run read_csv() it prints out a column specification that gives the name and type of each column. That's an important part of readr: http://r4ds.had.co.nz/data-import.html#parsing-a-file
+
+You can also supply an inline csv file. This is useful for experimenting with readr and for creating reproducible examples to share with others:
+```{r}
+read_csv("a,b,c
+1,2,3
+4,5,6")
+```
+
+Note that string used in the previous example is spread into three lines. You can insert line end/newline explicitly by using "\n" string (no need to leave spaces!): 
+```{r}
+read_csv("a,b,c\n4,5,6\n1,2,3")
+```
+
+### Skip rows and column names options
+
+In both cases read_csv() uses the first line of the data for the column names, which is a very common convention. There are two cases where you might want to tweak this behaviour:
+
+1. __Sometimes there are a few lines of metadata at the top of the file__. You can use skip = n to skip the first n lines; or use comment = "#" to drop all lines that start with (e.g.) #.
+
+```{r}
+(d <- read_csv("The first line of metadata
+  The second line of metadata
+  x,y,z
+  1,2,3", skip = 2))
+```
+
+```{r}
+problems(d)
+```
+
+
+```{r}
+read_csv("# A comment I want to skip
+  x,y,z
+  1,2,3", comment = "#")
+```
+
+Real-life example:
+```{r}
+(rba <- read_csv("data/ECIS_141022_MFT_2_RbA.csv"))
+```
+
+So what's the problem?
+```{r}
+problems(rba)
+```
+
+This real-life example bring us to the another common issue with csv tables:
+
+2. __The data might not have column names__ You can use col_names = FALSE to tell read_csv() not to treat the first row as headings, and instead label them sequentially from X1 to Xn:
+
+In this example, we have only values, with no apparent column names. Note that base R does not allow numeric column names! In base R, read.csv prepends numerics with X and converts to string. read.csv does not allow string input or data, input must be file path.
+```{r}
+read_csv("1,2,3\n4,5,6", col_names = FALSE)
+```
+Alternatively you can pass col_names a character vector which will be used as the column names:
+```{r}
+read_csv("1,2,3\n4,5,6", col_names = c("x","y","z"))
+```
+
+Another option that commonly needs tweaking is na: this specifies the value (or values) that are used to represent missing values in your file:
+```{r}
+read_csv("a,b,c\n1,2,.", na = ".")
+```
+
+Now we really have to have a look at the file. So it seems that file header, first 21 colums contain various experimental metadata and [Data] start at line 24. Let's skip first 23 lines and we don't have a header then:
+```{r}
+(rba <- read_csv("data/ECIS_141022_MFT_2_RbA.csv", skip = 23, col_names = FALSE))
+```
+
+Ok, now we have a rectangular table with 318 rows and 481 columns. Now we need to add also column titles... I think the column titles are in rows 19 and 20 with 382 columns. Let's import this range from our .csv file: 
+
+```{r}
+(rba_tit <- read_csv("data/ECIS_141022_MFT_2_RbA.csv", skip = 18, n_max = 964, col_names = FALSE))
+```
+
+Ups! readr leaves us high and dry with this...because there is no easy way to specify how much 
+
+```{r}
+(headers <- read.csv("data/ECIS_141022_MFT_2_RbA.csv", skip = 19, header = FALSE, nrows = 2, stringsAsFactors = FALSE))
+```
+
+```{r}
+headers_merged <- paste(headers[2,], headers[1,], sep = "_")
+head(headers_merged) # we have NA_NA at the end, which needs to be removed
+```
+
+These colnames need some work but we can use them already right now:
+```{r}
+colnames(rba) <- head(headers_merged, -1) # we skip last value
+rba
+```
+
+### Compared to base R
+
+If you've used R before, you might wonder why we're not using read.csv(). There are a few good reasons to favour readr functions over the base equivalents:
+
+- They are typically much faster (~10x) than their base equivalents. Long running jobs have a progress bar, so you can see what's happening. If you're looking for raw speed, try data.table::fread(). It doesn't fit quite so well into the tidyverse, but it can be quite a bit faster.
+- They produce tibbles, they don't convert character vectors to factors (use stringsAsFactors = FALSE), use row names, or munge the column names. These are common sources of frustration with the base R functions.
+
+- They are more reproducible. Base R functions inherit some behaviour from your operating system and environment variables, so import code that works on your computer might not work on someone else’s.
+
+### Exercises
+
+1. What function would you use to read a file where fields were separated with
+"|"?
+
+2. Apart from file, skip, and comment, what other arguments do read_csv() and read_tsv() have in common?
+
+3. What are the most important arguments to read_fwf()?
+
+4. Sometimes strings in a CSV file contain commas. To prevent them from causing problems they need to be surrounded by a quoting character, like " or '. By convention, read_csv() assumes that the quoting character will be ", and if you want to change it you'll need to use read_delim() instead. What arguments do you need to specify to read the following text into a data frame?
+
+```{r}
+"x,y\n1,'a,b'"
+```
+
+5. Identify what is wrong with each of the following inline CSV files. What happens when you run the code?
+```{r}
+read_csv("a,b\n1,2,3\n4,5,6")
+read_csv("a,b,c\n1,2\n1,2,3,4")
+read_csv("a,b\n\"1")
+read_csv("a,b\n1,2\na,b")
+read_csv("a;b\n1;3")
+```
+
+## readxl
+The  package makes it easy to get data out of Excel and into R. Compared to many of the existing packages (e.g. gdata, xlsx, xlsReadWrite) readxl has no external dependencies, so it's easy to install and use on all operating systems. It is designed to work with tabular data.
+
+> readxl supports both the legacy .xls format and the modern xml-based .xlsx format. 
+
+```{r}
+library(readxl)
+```
+
+Readxl package has two main functions: 
+
+- excel_sheets(): list all sheets in an excel spreadsheet.
+- read_excel(): Read xls and xlsx files.
+While read_excel() auto detects the format from the file extension, read_xls() and read_xlsx() can be used to read files without extension.
+
+Let's have a look at the sheets:
+```{r}
+(sheets <- excel_sheets("data/ECIS_141022_MFT_1.xls"))
+```
+
+You need to import one sheet at the time:
+```{r}
+(z_500 <- read_excel("data/ECIS_141022_MFT_1.xls", sheet = "Z 500 Hz"))
+```
+
+```{r, eval = FALSE}
+(z <- read_excel("data/ECIS_141022_MFT_1.xls", sheet = 3:5))
+```
+
+
+To import multiple sheets, e.g. sheets 3 to 5:
+```{r}
+mft <- map(sheets[3:5], ~ read_excel("data/ECIS_141022_MFT_1.xls", sheet = .x))
+names(mft) <- sheets[3:5]
+bind_rows(mft, .id = "Param")
+```
+
+## Tidy data
+
+Same underlying data can be can represented in multiple ways: http://r4ds.had.co.nz/tidy-data.html
+
+These are all representations of the same underlying data, but they are not equally easy to use. One dataset, the tidy dataset, will be much easier to work with inside the tidyverse.
+
+There are three interrelated rules which make a dataset tidy:
+
+- Each variable must have its own column.
+- Each observation must have its own row.
+- Each value must have its own cell.
+
+![Tidy data, figure from r4ds](http://r4ds.had.co.nz/images/tidy-1.png)
+
+These three rules are interrelated because it's impossible to only satisfy two of the three. That interrelationship leads to an even simpler set of practical instructions:
+
+- Put each dataset in a tibble.
+- Put each variable in a column.
+
+Why ensure that your data is tidy? There are two main advantages:
+
+There's a general advantage to picking one consistent way of storing data. If you have a __consistent data__ structure, it's easier to learn the tools that work with it because they have an underlying uniformity.
+
+There's a specific advantage to placing variables in columns because it allows __R's vectorised nature__ to shine. As you learned in mutate and summary functions, most built-in R functions work with vectors of values. That makes transforming tidy data feel particularly natural.
+
+dplyr, ggplot2, and all the other packages in the tidyverse are designed to work with tidy data. 
+
+## Spreading and gathering
+
+The principles of tidy data seem so obvious that you might wonder if you will ever encounter a dataset that isn't tidy. Unfortunately, however, most data that you will encounter will be untidy. There are two main reasons:
+
+Most people aren't familiar with the principles of tidy data, and it's hard to derive them yourself unless you spend a lot of time working with data.
+
+Data is often organised to facilitate some use other than analysis. For example, data is often organised to make entry as easy as possible.
+
+This means for most real analyses, you'll need to do some tidying. The first step is always to figure out what the variables and observations are. Sometimes this is easy; other times you’ll need to consult with the people who originally generated the data. The second step is to resolve one of two common problems:
+
+- One variable might be spread across multiple columns.
+
+- One observation might be scattered across multiple rows.
+
+Typically a dataset will only suffer from one of these problems; it'll only suffer from both if you're really unlucky! To fix these problems, you'll need the two most important functions in tidyr: gather() and spread().
+
+## Gathering
+
+A common problem is a dataset where some of the column names are not names of variables, but values of a variable. 
+
+```{r}
+(wage <- read_excel("data/keskmine_brutokuupalk.xls", skip = 4))
+colnames(wage)[1] <- "month"
+wage
+```
+Above table: the column names 2005 etc represent values of the year variable, and each row represents more than one observation, not one.
+
+To tidy a dataset like this, we need to gather those columns into a new pair of variables. To describe that operation we need three parameters:
+
+1. The set of columns that represent values, not variables. In this example, those are the columns starting from 2005.
+
+2. The name of the variable whose values form the column names. I call that the key, and here it is "Aasta" (year).
+
+3. The name of the variable whose values are spread over the cells. I call that value, and here it's the average bruto wage (wage).
+
+Together those parameters generate the call to gather():
+```{r}
+(wage_tidy <- wage %>% 
+  gather(starts_with("20"), key = "year", value = "wage"))
+```
+
+Note that "2005" to "2017" are non-syntactic names (because they don’t start with a letter) so we have to surround them in backticks.
+
+Let's merge wage data with average price per m^2 from transactions data:
+```{r}
+(trans <- read_csv("data/transactions.csv"))
+```
+
+
+To combine the tidied versions of wages and transactions into a single tibble, we need to use dplyr::left_join()
+```{r}
+library(lubridate)
+(price_permonth <- trans %>% 
+   mutate(year = year(Kuu),
+          month = month(Kuu)) %>%
+    select(year, month, everything()) %>% 
+    group_by(year, month) %>%
+    summarise(av_price = mean(`Pinnaühiku hind(eur /m2) Keskmine`, na.rm = TRUE)))
+```
+
+We need to change months to integers:
+```{r}
+(wage_tidy <- mutate(wage_tidy,
+                    month = case_when(
+                      str_detect(month, "Jaan") ~ 1,
+                      str_detect(month, "Veeb") ~ 2,
+                      month == "Märts" ~ 3,
+                      month == "Aprill" ~ 4,
+                      month == "Mai" ~ 5,
+                      month == "Juuni" ~ 6,
+                      month == "Juuli" ~ 7,
+                      month == "August" ~ 8,
+                      month == "September" ~ 9,
+                      month == "Oktoober" ~ 10,
+                      month == "November" ~ 11,
+                      month == "Detsember" ~ 12
+                    )))
+```
+
+
+```{r, eval=FALSE}
+left_join(wage_tidy, price_permonth)
+```
+
+Not working! Why?
+
+Lets fix:
+```{r}
+wage_tidy <- mutate(wage_tidy, year = as.numeric(year))
+(salary_and_prices <- left_join(wage_tidy, price_permonth))
+```
+
+Is the relationship between real estate price and average wage linear?
+```{r}
+salary_and_prices %>% 
+  ggplot() +
+  geom_point(aes(x = wage, y = av_price, colour = factor(year)))
+```
+
+## Spreading
+
+Spreading is the opposite of gathering. You use it when an observation is scattered across multiple rows. For example, take following table: an observation is a month in a year, but each observation is spread across two rows.
+
+```{r}
+(sp <- salary_and_prices %>% 
+  filter(year == 2017, between(month, 1, 3)) %>% 
+  gather(key, value, c("wage", "av_price")))
+```
+
+To tidy this up, we first analyse the representation in similar way to gather(). This time, however, we only need two parameters:
+
+1. The column that contains variable names, the key column.
+
+2. The column that contains values forms multiple variables, the value column.
+
+We need to place each key into separate column.
+```{r}
+spread(sp, key, value)
+```
+
+```{r}
+sp[-6, ] %>% 
+  spread(key, value)
+```
+
+
+## Separating and uniting
+
+We have one column that contains two variables. To fix this problem, we'll need the separate() function. 
+
+Complement of separate() is unite(), which you use if a single variable is spread across multiple columns.
+
+### Separate
+let's make example table:
+```{r}
+(Rb <- select(rba, `Well ID_Time (hrs)`, contains("Rb")))
+```
+
+Here we have well id and parameter in the key column:
+```{r}
+(Rb_tidy <- gather(Rb, key, value, contains("Rb")))
+```
+
+We need to specify separator separating these two values:
+```{r}
+(Rb_separated <- separate(Rb_tidy, key, into = c("well", "parameter"), sep = "_"))
+```
+
+### Unite
+
+unite() is the inverse of separate(): it combines multiple columns into a single column. You’ll need it much less frequently than separate(), but it’s still a useful tool to have in your back pocket.
+
+```{r}
+salary_and_prices %>% 
+  unite(year_month, year, month, sep = "-")
+```
+
+
