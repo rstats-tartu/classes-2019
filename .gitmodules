@@ -1,0 +1,3 @@
+[submodule "hf-data"]
+	path = hf-data
+	url = https://github.com/rstats-tartu/hip-fractures.git
