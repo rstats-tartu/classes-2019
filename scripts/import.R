@@ -1,6 +1,5 @@
 library(tidyverse)
 library(here)
-library(readxl)
 
 date_format <- col_date(format = "%d.%m.%Y")
 pac_csv <- read_delim("hf-data/post-acute_care_data_only (rows).csv",
