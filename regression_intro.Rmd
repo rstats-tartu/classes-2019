@@ -1,0 +1,964 @@
+---
+title: "regression intro"
+output: html_notebook
+---
+
+```{r}
+library(tidyverse)
+library(ggthemes)
+library(broom)
+library(modelr)
+library(viridis)
+library(brms)
+library(bayesplot)
+```
+
+## Bayes - posterior is proportional to likelihood x prior
+
+1. define all mutually exclusive and independent hypotheses = hypothesis space. 
+
+2. Assign a prior probability to each hypothesis, so that the sum of these probabilities = 1.
+
+3. assume that hypothesis H1 is true, then count all the futures that lead to your data under H1. Divide by the number of all possible futures under H1. This is the likelihood for H1, or P(data I H1).
+
+4. Do the same for Hypothesis H2, H3, ..., until you have covered the whole of hypotesis space.
+
+5. for each hypothesis weight the likelihood by the prior probability of this hypothesis: P(data I H1) x P(H1), P(data I H2) x P(H2), ...
+
+4. Posterior for hypothesis A: P(H1 I data) = P(data I H1) x P(H1) / sum of all weighted likelihoods (every hypothesis has a weighted likelihood).
+
+Bayes theorem for i hypotheses: 
+
+$$P(H_1 ~\vert~d) = \frac{P(d ~\vert~H_1)P(H_1)}{\sum (P(d~\vert ~H_i)P(H_i))}$$
+
+Some corollaries:
+
+1. you need at least 2 hypotheses in your hypothesis space (the probability of a single hypothesis hypothesis space is by definition 1)
+
+2. each data point shifts probablilities - bayes works data point by data point
+
+3. the order of seeing the data does not matter.
+
+
+## MCMC - Markov Chain Monte Carlo
+
+**Monte Carlo** simulations are used to estimate a parameter by generating random numbers. 
+
+estimate the area of the circle by dropping 20 points randomly inside the square. 
+
+1. count the proportion of points that fell within the circle, 
+
+2. multiply by the area of the square. 
+
+**Markov chains** are sequences of events that are probabilistically related to one another. 
+
+Each event comes from a set of outcomes, and each outcome determines which outcome occurs next, according to a fixed set of probabilities.
+
+Markov chains are memoryless: to predict the next event you only need to know the current state. 
+
+imagine you live in a house with 3 rooms. if you are in the kitchen, you have a 30% chance to stay in the kitchen, a 60% chance to go into the dining room, a 10% chance to go into the living room. 
+
+we can construct a chain of predictions of which rooms you are likely to occupy next.
+
+Percentages are estimated from data & priors
+
+the chain starts in a random room and randomly proposes a step to another room. 
+
+Each step is a parameter value
+
+For each proposal, it is possible to compute whether it is a better parameter value than the current position, by computing how likely each value is to explain the data, given our prior beliefs.
+
+If a randomly generated parameter value is better than the last one, it is added to the chain of parameter values with a certain probability determined by how much better it is (this is the Markov chain part).
+
+Running the chain for thousands of iterations gives the long-run prediction of what room you’re likely to be in.
+
+Using MCMC, we’ll effectively draw samples from the posterior distribution.
+
+We can work directly with these posterior samples!
+
+For n parameters, there exist regions of high probability in n-dimensional space where certain sets of parameter values better explain observed data. Therefore, MCMC methods randomly sample inside a probabilistic space to approximate the posterior distribution.
+
+```{r}
+a <- rnorm(100)
+tidy(lm(a~1))
+```
+
+
+## A simple linear data model (likelihood) - normal distribution
+
+to estimate the most likely value in nature, the simplest model is the normal distribution (dnorm), which has 2 parameters.  
+
+- $\mu$ or mean estimates the most likely value in the wild (not in our dataset). 
+
+- $\sigma$ or sd estimates data variation in the wild (not in our dataset).
+
+$$y \sim dnorm(\mu, \sigma)$$ 
+
+```{r}
+x <- seq(-5, 5, length.out = 100)
+y <- dnorm(x)
+plot(x,y)
+#plot(y~x)
+```
+
+## Robust linear data model - t distribution
+
+$$y \sim dt(\mu, \sigma, \nu)$$ 
+
+```{r}
+x <- seq(-5, 5, length.out = 100)
+y <- dstudent_t(x, df=1)
+plot(x,y)
+```
+
+## A non-linear data model - lognormal distribution
+
+y~dlognormal(mu, sigma) - a non-linear model
+
+```{r}
+x <- seq(0, 5, length.out = 1000)
+y <- dlnorm(x)
+plot(x,y)
+```
+
+lets fit a simple model of the heights of the last 11 US presidents.
+
+```{r}
+heights <- tibble(value = c(183, 192, 182, 183, 177, 185, 188, 188, 182, 185, 188))
+```
+
+the usual linear model by least squares only estimates the mean. NB! The least square estimate of the mean is in this simple case equivalent with the arithmetic mean.
+```{r}
+lm(data=heights, value~1) %>% tidy() %>% 
+  mutate_if(is.numeric, round, 2)
+```
+
+The same model fitted in brms. Model syntax is essentially the same.
+
+here we use essentially uninformative priors, which add nothing to our predictions - data (likelihood) totally dominates the inference.
+
+```{r eval=FALSE}
+m1 <- brm(data=heights, value~1, family = "student")
+write_rds(m1, "m1.rds")
+```
+
+```{r}
+m1 <- read_rds("m1.rds")
+plot(m1)
+```
+
+```{r}
+tidy(m1) %>% mutate_if(is.numeric, round, 2)
+```
+
+Here we fitted both parameters of the normal distribution and got estimates with posterior distributions.
+
+Lets fit a different model. A robust model that fits the outlying data points under heavy tails. Here the likelihood function is students t, which has 3 parameters.
+
+```{r eval=FALSE}
+m2 <- brm(data=heights, value~1, family = "student")
+write_rds(m2, "m2.rds")
+```
+
+```{r}
+m2 <- read_rds("m2.rds")
+plot(m2)
+```
+
+And a log-normal model (2 parameters: mu and sigma, but in log scale), where we assume an exponential distribution of heights (which is of course not true for mens heights, but lets pretend).
+
+```{r eval=FALSE}
+m3 <- brm(data=heights, value~1, 
+          family = "lognormal")
+write_rds(m3, "m3.rds")
+```
+ 
+ 
+```{r}
+m3 <- read_rds("m3.rds")
+plot(m3)
+```
+
+Here we must take the exponents of parameter estimates.
+
+exp(mu) gives the median height.here we carry forward the model uncertainty and end up with posterior for the median, from which we take the mean as our point estimate for the true value.
+```{r}
+m3_post <- posterior_samples(m3)
+exp(m3_post$b_Intercept) %>% mean()
+```
+
+If $\mu$ and $\sigma$ are model coefficients, then:
+the mean in the original data scale: $$exp(\mu + 1/2 \times \sigma ^2)$$ 
+the mode in the original data scale: $$mode = exp(\mu - \sigma  ^2)$$
+the median in the original data scale: $$median = exp(\mu)$$
+the standard deviation inn the original data scale:
+$$sd = exp(\mu + \frac {\sigma  ^2}{2}) (exp(\sigma ^2 - 1))^{1/2}$$
+
+Here we carry forward the model uncertainty and end up with posterior for the mean.
+```{r}
+m3_post <- posterior_samples(m3)
+a <- exp(m3_post$b_Intercept + 0.5*m3_post$sigma**2) 
+#ggplot(data=NULL, aes(a)) + geom_histogram()
+mean(a)
+```
+
+Cool, even this model does not really fail on a normal data set - but it would be much better for most biological data (reaction kinetics, growth processes, etc).
+
+
+lets try the salary data which is more or less lognormal.
+```{r}
+library(readxl)
+df1 <- read_excel("~/Dropbox/loengud/R course/2019 - R course/data/excersise1_salaries.xlsx")
+df1$Ekv_st <- parse_double(df1$Ekv_st)
+```
+
+```{r eval=FALSE}
+df1 <- filter(df1, Ekv_st>0)
+m1_salary <- brm(data= df1, Ekv_st~1, family = "lognormal")
+write_rds(m1_salary, "m1_salary.rds")
+```
+
+```{r}
+m1_salary <- read_rds("m1_salary.rds")
+plot(m1_salary)
+```
+
+$$mode = e ^{\mu - \sigma  ^2}$$
+```{r}
+m1_salary_post_sample <- posterior_samples(m1_salary)
+mode_m1 <- exp(m1_salary_post_sample$b_Intercept -  m1_salary_post_sample$sigma**2)
+median(mode_m1)
+```
+
+
+```{r}
+pp_check(m1_salary)
+```
+
+
+
+Now we look at the m1 model fit generated by default priors only (without conditionaing on data)
+
+```{r}
+get_prior(data=heights, value~1)
+```
+
+
+```{r eval=FALSE}
+m4 <- brm(data=heights, value~1,
+          sample_prior = "only")
+write_rds(m4, "m4.rds")
+```
+
+```{r}
+m4 <- read_rds("m4.rds")
+```
+
+
+```{r}
+plot(m4)
+```
+
+```{r}
+get_prior(data=heights, value~1)
+```
+
+ok, default priors are quite wide. Lets make them narrower.
+
+```{r}
+prior <- c(prior(normal(180, 5), class = "Intercept"),
+           prior(student_t(10, 0, 2), class = "sigma"))
+```
+
+now we run the MCMC on priors alone, and separately on priors and data (set_prior=TRUE). 
+```{r eval=FALSE}
+m5 <- brm(data=heights, value~1,
+          prior = prior,
+          sample_prior = TRUE)
+write_rds(m5, "m5.rds")
+```
+
+```{r}
+m5 <- read_rds("m5.rds")
+```
+
+this code shows the model conditioned on priors alone
+```{r}
+prior_samples(m5) %>% 
+  gather() %>% 
+  ggplot() + 
+  geom_density(aes(value)) + 
+  facet_wrap(~ key, scales = "free")
+```
+
+and the same model conditioned on priors and data:
+```{r}
+plot(m5)
+```
+
+Almost the same result as m1 - data dominates over prior.
+```{r}
+tidy(m5)
+```
+
+the mcmc chains walk through all parameters (in this case 2) in n-dimensional space. pairs allows to see correlations between parameter values. 
+```{r}
+pairs(m5)
+```
+
+lets collect the posterior samples and plot the 50% and 95% CI-s around around our estimate fot the mean.
+```{r}
+m5_post <- posterior_samples(m5)
+pars <- colnames(m5_post)
+bayesplot::mcmc_intervals(m5_post, pars = "b_Intercept")
+```
+
+pp_check or posterior predictive check - generate new data from the model and compare with data on which the model was fitted. Here we regenerate 10 independent samples from  models 1-3 and plot them as densities. Thick lines plot sample data.
+```{r}
+purrr::map(list(m1, m2, m3), pp_check, nsamples = 10) %>% 
+  gridExtra::grid.arrange(grobs = ., ncol = 1)
+```
+
+## Adding a predictor to the model
+
+$$y \sim dnorm(\mu, \sigma)$$
+
+We reformulate mu as $$\mu = \alpha + \beta \times x$$
+
+or $$y \sim dnorm(\alpha + \beta x, \sigma)$$
+
+Now we don't estmate mu, but instead 2 new parameters, a and b.
+
+This means that instead of estmating a single mu, we estimate the value of mu at each value of x. This model knows that at each value of x the sigma remains the same.
+
+In the R model language we write this as $$y \sim x$$. But this is just semantics.
+
+
+### A Model only knows what you tell it. 
+
+If you tell your model that the variable that you want to predict (y) is normal, and that its relation with the predictor variable (x) is a straight line, then your model fits a straight line and it can be very confident about the best fit, even if the fit is actually extremely bad.
+
+Our models know nothing of space, time, and causality. They are tools. A tool cannot be true or false.
+
+the purpose of this tool is twofold: (1) to provide insights into scientific theories, and (2) to make predictions. 
+
+### Linear regression 
+
+"Linear" technically means additive, not that the model describes a straight line.
+
+If a model formula can be reformulated as addition (and multiplications by definition always can), then we have a linear model.
+
+$y \sim a + b_1 x_1 + b_2 x_2 ^2$ is additive, linear, and describes a parabola.
+
+All linear models see y variable as normal (or as t distribution)
+
+################################################
+
+modelling process:
+
+1. define the type of the model based on what we think that we know about data generating process (do we want a staight line, a parabola, a monotonic change, or something more flexible).
+
+2. fit (condition) the model on data & background knowledge. Fitting on actual background knowledge reduces bias & overfitting.
+
+3. generate predictions from the model to compare with sample data, look for the goodness of fit, criticize the model.
+
+4. modify the model, repeat steps 1-3
+
+5. compare models, draw scientific conclusions. NB! conclusions come from all the models that you fitted, not the model with the best fit.
+
+##################################################
+
+y = a + bx
+
+The goal is to predict mean(y) from x.
+The model only sees variation in the y-direction (we may assume that we know x exactly). regression is asymmetrical!!!
+
+y - dependent variable; predicted variable
+x - independent variable; prediction variable
+a - intercept (the mean value of y when x=0)
+b - slope (the change in mean y value, when x increases by 1 unit)
+
++ y and x are variables, whose values vary, and whose values we measure.
+
++ a, b are model coefficients, whose true values are estimated from data & background knowledge. This costitutes model fitting.
+
+if x is centered: xi - mean(x), then a is the mean value of y at mean(x)
+
+if x is standardized [`R::scale()`] - (xi - mean(x))/sd(x), then a is the mean value of y at mean(x), and b gives the change in y when x increases by 1 SD. More often than not it is better to standardize your x-s. 
+
+if b = 0, then the mean value of y = a = mean(y) accross all x values.  
+
+the linear model is built on the normal distribution of y variable (students t distribution also works) - likelihood is modelled as normal, or t distribution.
+
+```{r}
+x <- seq(0:10)
+a <- 1
+b <- 0.5
+y <- a + b*x
+ggplot(data=NULL, aes(x, y)) + 
+  geom_line()+ ylim(0,10)+xlim(0,10)
+```
+
+if x = 5, then the prediction from this model is:
+```{r}
+a + b*5
+```
+
+
+```{r}
+ggplot(data = NULL)+ 
+  geom_abline(slope = 0.5, intercept = 1)+ 
+  ylim(0,10)+xlim(0,10)
+```
+
+Fitting the model - getting the regression curve as close to n-dimensional data & background knowledge as possible.
+ 
+## discrete predictor
+
+Same as t test for fixed sd accross groups.
+By we do the robust version
+
+$y \sim dt(\alpha + x, \sigma)$
+
+or in r model language $y \sim x$
+
+the data is iris dataset (150 observations, 4 numeric vars, 1 categorical var)
+
+```{r}
+str(iris)
+```
+
+here the slopes give the difference between the means of the groups.
+
+brms wants you to always specify priors - it often uses flat priors in default. 
+
+```{r}
+get_prior(data=iris, Sepal.Length~Species)
+```
+
+```{r}
+prior <- c(prior(normal(5, 2), class = "Intercept"),
+           prior(normal(0, 2), class ="b"),
+           prior(student_t(10, 0, 2), class = "sigma"))
+```
+
+```{r eval=FALSE}
+m6 <- brm(data=iris, Sepal.Length~Species,
+          prior = prior,
+          sample_prior = TRUE)
+write_rds(m6, "m6.rds")
+```
+
+lets see how priors behave without data to fit the model 
+```{r}
+m6 <- read_rds("m6.rds")
+m6_post <- posterior_samples(m6) 
+```
+
+```{r}
+prior_samples(m6) %>% 
+  gather() %>% 
+  ggplot() + 
+  geom_density(aes(value)) + 
+  facet_wrap(~ key, scales = "free_x")
+```
+
+
+```{r}
+plot(m6)
+```
+
+So Intercept gives the mean vaue for Iris setosa
+
+```{r}
+HDInterval::hdi(m6_post$b_Intercept); median(m6_post$b_Intercept)
+```
+
+to get the same for Iris versicolor
+
+```{r}
+HDInterval::hdi(m6_post$b_Intercept + m6_post$b_Speciesversicolor); median(m6_post$b_Intercept + m6_post$b_Speciesversicolor)
+```
+
+and for the difference between those two species
+
+```{r}
+HDInterval::hdi(m6_post$b_Speciesversicolor); median(m6_post$b_Speciesversicolor)
+```
+
+```{r}
+pars <- colnames(m6_post)
+mcmc_intervals(m6_post, regex_pars = "[^(lp__)]")
+```
+
+
+```{r}
+pp_check(m6)
+```
+
+here we predict from the model data for each species.
+```{r}
+plot(marginal_effects(m6, effects = "Species", method = "predict", probs = c(0.1, 0.9)), points = TRUE)
+```
+
+### Same with robust model & varying SD-s
+
+its a mixture model. Also, we fix nu parameter inside the bf() expression, so that we dont have to estmate it. This is optional, of course - usually I would not do this and let the data decide, how fat the tails of the distribution should be. Here we have nice and normal data, so the value of nu should be quite large (like 50) - making this essentially a gaussian likelihood. However, I will use nu = 5 for pedagogical reasons.
+
+```{r}
+get_prior(data=iris, bf(Sepal.Length~Species, sigma~Species, nu = 5), family = "student")
+```
+
+```{r}
+prior <- c(prior(normal(5, 2), class = "Intercept"),
+           prior(normal(0, 2), class ="b"),
+           prior(student_t(10, 0, 2), class = "b", dpar="sigma")
+           )
+```
+
+
+```{r eval=FALSE}
+m6_r <- brm(data=iris, bf(Sepal.Length~Species, sigma~Species, nu = 5), family = "student",
+          prior = prior)
+write_rds(m6_r, "m6_r.rds")
+```
+
+```{r}
+m6_r <- read_rds("m6_r.rds")
+tidy(m6_r)
+```
+
+```{r}
+marginal_effects(m6_r, effects = "Species", method = "fitted", probs = c(0.1, 0.9))
+```
+
+```{r}
+pp_check(m6_r)
+```
+
+
+### continuous predictor
+
+
+```{r}
+get_prior(data=iris, Petal.Length~Sepal.Length)
+```
+
+```{r}
+prior <- c(prior(normal(0, 1), class ="b"),
+           prior(student_t(10, 0, 2), class = "sigma"))
+```
+
+```{r eval=FALSE}
+m7_prior <- brm(data=iris, Petal.Length~Sepal.Length,
+          prior = prior,
+          sample_prior = "only")
+write_rds(m7_prior, "m7_prior.rds")
+```
+
+get prior predictions
+```{r}
+m7_prior <- read_rds("m7_prior.rds")
+pr_samples <- m7_prior$fit %>% as.data.frame() %>% sample_n(40) %>% rename(a = b_Intercept, b= b_Sepal.Length)
+
+ggplot(data=NULL)+ 
+  geom_abline(slope = pr_samples$b, intercept = pr_samples$a) + 
+  xlim(-100, 100)+
+  ylim(-100, 100)
+```
+
+```{r eval=FALSE}
+m7 <- brm(data=iris, Petal.Length~Sepal.Length,
+          prior = prior)
+write_rds(m7, "m7.rds")
+```
+
+```{r}
+m7 <- read_rds("m7.rds")
+tidy(m7)
+```
+
+here we plot 80 fits from the posterior sample
+```{r}
+m7_post <- posterior_samples(m7) %>% sample_n(80) %>% rename(a= b_Intercept, b= b_Sepal.Length)
+ggplot(data=NULL)+ 
+  geom_abline(slope = m7_post$b, intercept = m7_post$a, size=0.2, alpha=0.2) + 
+  geom_point(data=iris, aes(Sepal.Length, Petal.Length), size=0.5)+
+  xlim(0, 10)+
+  ylim(-10, 10)
+```
+
+here we predict new data from the model (old data is shown in graph) w 90% prediction intervals (90% PI)
+```{r}
+plot(marginal_effects(m7, effects = "Sepal.Length", method = "predict", probs = c(0.1, 0.9)), points = TRUE)
+```
+
+here we see model fit with uncertainty (90% CI)
+```{r}
+plot(marginal_effects(m7, effects = "Sepal.Length", method = "fitted", probs = c(0.1, 0.9)), points = TRUE)
+```
+
+
+## Multiple regression
+
+```{r}
+get_prior(data=iris, Petal.Length~Sepal.Length + Species)
+```
+
+```{r}
+prior <- c(prior(normal(0, 1), class ="b"),
+           prior(student_t(3, 0, 2), class = "sigma"))
+```
+
+```{r eval=FALSE}
+m8_prior <- brm(data=iris, Petal.Length~Sepal.Length,
+          prior = prior,
+          sample_prior = "only")
+write_rds(m8_prior, "m8_prior.rds")
+```
+
+get prior predictions
+```{r}
+m8_prior <- read_rds("m8_prior.rds")
+pr_samples <- m8_prior$fit %>% as.data.frame() %>% sample_n(40) %>% rename(a = b_Intercept, b= b_Sepal.Length)
+
+ggplot(data=NULL)+ 
+  geom_abline(slope = pr_samples$b, intercept = pr_samples$a) + 
+  xlim(-50, 50)+
+  ylim(-50, 50)
+```
+
+or like this
+
+```{r}
+pp_check(m8_prior)
+```
+
+```{r}
+tidy(lm(data=iris, Petal.Length~Sepal.Length + Species))
+```
+
+
+```{r eval=FALSE}
+m8 <- brm(data=iris, Petal.Length~Sepal.Length + Species,
+          prior = prior)
+write_rds(m8, "m8.rds")
+```
+
+```{r}
+m8 <- read_rds("m8.rds")
+tidy(m8)
+```
+
+```{r}
+pp_check(m8)
+```
+
+here we plot 80 fits from the posterior sample
+```{r}
+m8_post <- posterior_samples(m8) %>% sample_n(80) %>% rename(a= b_Intercept, b= b_Sepal.Length)
+ggplot(data=NULL)+ 
+  geom_abline(slope = m7_post$b, intercept = m7_post$a, size=0.2, alpha=0.2) + 
+  geom_point(data=iris, aes(Sepal.Length, Petal.Length), size=0.5)+
+  xlim(0, 10)+
+  ylim(-10, 10)
+```
+
+here we predict new data from the model (old data is shown in graph) w 90% prediction intervals (90% PI)
+```{r}
+plot(marginal_effects(m8, effects = "Sepal.Length", 
+                      method = "predict", 
+                      conditions = make_conditions(iris, vars = "Species"), 
+                      probs = c(0.1, 0.9)), points = TRUE)
+```
+
+here we see model fit with uncertainty (90% CI)
+```{r}
+plot(marginal_effects(m8, effects = "Sepal.Length", 
+                      conditions = make_conditions(iris, vars = "Species"),
+                      method = "fitted", 
+                      re_formula = NULL,
+                      probs = c(0.1, 0.9)), points = TRUE)
+```
+
+
+point-wise Estimate vs predicted value for each individual iris plant, with 95% PI-s
+
+```{r}
+pr <- predict(m8) %>% cbind(iris)
+ggplot(pr, aes(Petal.Length, Estimate, color = Species)) +
+  geom_pointrange(aes(ymin = Q2.5, ymax = Q97.5)) +
+  geom_abline(lty = 2) 
+```
+
+adding Species to the model clearly helps!
+```{r}
+pr <- predict(m7) %>% cbind(iris)
+ggplot(pr, aes(Petal.Length, Estimate, color = Species)) +
+  geom_pointrange(aes(ymin = Q2.5, ymax = Q97.5)) +
+  geom_abline(lty = 2) 
+```
+
+```{r}
+loo(m7, m8)
+```
+
+we search for influential data points (pareto k > 0.5 is considered influential)
+```{r}
+plot(loo(m8))
+```
+
+and residual plot
+```{r}
+resid <- residuals(m8, type = "pearson")
+fit <- fitted(m8)
+ggplot() + 
+  geom_point(aes(x = fit[,"Estimate"], y = resid[,"Estimate"])) + 
+  geom_hline(yintercept = 0, lty = "dashed") +
+  labs(x = "fitted", y = "residuals")
+```
+
+histogram of residuals
+```{r}
+ggplot(data = NULL) + 
+  geom_density(aes(x = resid[,"Estimate"]), fill = "lightgrey") + 
+  geom_vline(xintercept = median(resid), linetype = "dashed")
+```
+
+and for each data point, how far is the residual for this specimen from 0.
+```{r}
+as_data_frame(residuals(m8)) %>% 
+  sample_n(20) %>% 
+  ggplot(aes(x = reorder(seq_along(Estimate), Estimate), y = Estimate)) +
+  geom_pointrange(aes(ymin = Q2.5, ymax = Q97.5), fatten = 0.1) +
+  coord_flip() +
+  theme(text = element_text(size = 8), axis.title.y = element_blank()) +
+  ylab("Residuals (95 CI)")
+```
+
+## Interaction models
+
+we start by standardizing the numeric vars by scale() function
+```{r eval=FALSE}
+iris1 <- iris %>% mutate_if(is.numeric, scale)
+
+m9 <- brm(Sepal.Length ~ Petal.Length + Sepal.Width + Petal.Length * Sepal.Width, 
+          data = iris1)
+write_rds(m9, "m9.fit")
+```
+
+```{r}
+m9 <- read_rds("m9.fit")
+tidy(m9)
+```
+
+```{r}
+plot(marginal_effects(m9, effects = "Petal.Length:Sepal.Width"), points = TRUE)
+```
+
+```{r}
+plot(marginal_effects(m9, effects = "Sepal.Width:Petal.Length"), points = TRUE)
+```
+
+we give the values of Sepal Width as -1 and 1
+```{r}
+conditions <- data.frame(Sepal.Width = c(-2, 2))
+plot(marginal_effects(m9, effects = "Petal.Length", conditions = conditions, re_formula = NULL), points = TRUE)
+```
+
+```{r}
+pp_check(m9)
+```
+
+# Logistic regression
+
+y- var is binary and we estimate it as probabilities of binary events. 
+
+We don't model y directly, instead we model P(y = 1 I x)
+
+to get the outcome into logistic scale 0 ... 1 (from - inf ... inf scale) we use logistic transfomation (logit link)
+
+odds = p/(1-p) = P(y=1 I x)/(1 - P(y=1 I x))
+
+for the usual linear model
+
+log(odds) = a + bx
+
+and equivalently
+
+odds = exp(a + bx)
+
+logistic function
+```{r}
+x <- seq(-5, 5, length.out = 100)
+y <- exp(x) / (1+exp(x))
+plot(y~x)
+```
+
+with logistic model y = a + bx, if we change x by 1 unit, then odds change by exp(b) units. How fast p(Y=1 I x) changes, depends on the value of x.
+
+
+```{r}
+chimp <- read_csv("data/chimp.csv")
+```
+
+```{r}
+head(chimp)
+```
+
+504 observations of some chimpanzees pulling a lever either right or left. Each animals did many pulls. There is an experimantal condition (prosoc_left 0/1).
+
+We start by fitting a simple model describing the overall probability of pulling the left lever.
+
+we use the bernoulli likelihood function, which models individual successes/failures. When we have the total number of successes/failures instead, then we use binomial likelihood - the result will be the same.
+
+```{r eval=FALSE}
+m10 <- brm(data = chimp, 
+                  family = bernoulli,
+                  pulled_left ~ 1,
+                  prior(normal(0, 10), class = Intercept))
+write_rds(m10, path= "m10.fit")
+
+```
+
+
+```{r}
+m10 <- read_rds("m10.fit")
+tidy(m10)
+```
+
+the overall probability that chimp pulls left is 58%
+```{r}
+inv_logit_scaled(fixef(m10))
+```
+
+now lets see, whether experimental condition changes things
+```{r eval=FALSE}
+m11 <-
+  brm(data = chimp, family = "bernoulli",
+      pulled_left ~ 1 + prosoc_left,
+      prior = c(prior(normal(0, 10), class = Intercept),
+                prior(normal(0, 10), class = b)))
+write_rds(m11, path= "m11.fit")
+```
+
+```{r}
+m11 <- read_rds("m11.fit")
+tidy(m11)
+```
+
+The odds - 1.73 proportional. If exp condition is applied, then the probability of pulling the left lever increases by 73%.
+```{r}
+exp(0.55)
+```
+
+The actual change in probability depend also on the intercept and on other predictors. The interactions between predictors are always modelled! Floor and ceiling effects - if intercept is so large that probability of Y = 1 is very high, then a 73% change doesnt change much.
+
+```{r}
+m11_post <- posterior_samples(m11)
+posterior_m11 <- inv_logit_scaled(m11_post$b_Intercept + m11_post$b_prosoc_left)
+hist(posterior_m11)
+```
+
+```{r}
+median(posterior_m11)
+```
+
+Here we see an actual 65% probablity. As the baseline probability is 51% left (see the code below), then the exp treatment increases this by 65 - 51 = 14 percentage points.
+
+And intercept only model gives the minus exp treatment probability of pulling left - 51% 
+
+```{r}
+median(inv_logit_scaled(m11_post$b_Intercept))
+```
+
+and the posterior for effect size is
+```{r}
+hist(m11_post$b_prosoc_left)
+```
+
+```{r}
+mean(m11_post$b_prosoc_left <0)
+```
+
+This is bayesian p value for the opposite sign effect.
+
+
+now lets fit a binomial version for data that contains ratios
+```{r}
+UCBadmit <- read.csv("data/UCBadmit.csv")
+```
+
+```{r}
+head(ucbadmit)
+```
+
+there are some departments in University of California, Berkley (1973), and admitted/rejected applications for graduate studies, by sex.
+
+Now we must specify at the left side of the equation both the column with the nr of successes and the column with the number of total tries
+
+```{r eval=FALSE}
+m12 <- brm(admit | trials(applications) ~ 1 + applicant.gender,
+                  data = ucbadmit, 
+                  family = binomial,
+                  prior = c(prior(normal(0, 10), class = Intercept), 
+                            prior(normal(0, 10), class = b)))
+write_rds(m12, path = "m12.fit")
+```
+
+```{r}
+m12 <- read_rds("m12.fit")
+```
+
+```{r}
+tidy(m12)
+```
+
+```{r}
+exp(0.61)
+```
+
+Men get a 84% advantage. Does this mean that women are discriminated against?
+
+```{r}
+inv_logit_scaled(-0.83 + 0.61)
+```
+
+mens probablity of admission is 44%
+
+Womans probabity of admission is 30%
+
+```{r}
+inv_logit_scaled(-0.83)
+```
+
+Lets ask this question of discrimination directly, by department:
+```{r eval=FALSE}
+m13 <- brm(admit | trials(applications) ~ 0 + dept + applicant.gender,
+                  data = ucbadmit, 
+                  family = binomial,
+                  prior(normal(0, 10), class = b))
+write_rds(m13, path = "m13.fit")
+```
+
+```{r}
+m13 <- read_rds("m13.fit")
+marginal_effects(m13, effects ="applicant.gender", conditions = data.frame(dept = c("A", "B", "C", "D", "E", "F")))
+```
+
+
+```{r}
+pd <- position_dodge(1)
+predict(m13) %>%
+  as_tibble() %>% 
+  bind_cols(ucbadmit) %>% 
+  ggplot(aes(x = dept, y = admit / applications)) +
+  geom_pointrange(aes(y = Estimate / applications,
+                      ymin = Q2.5  / applications,
+                      ymax = Q97.5 / applications,
+                      color = applicant.gender), position = pd) +
+  geom_point(aes(color = applicant.gender), position = pd) +
+  labs(y = "Proportion admitted",
+       title = "Posterior validation check") 
+```
+
