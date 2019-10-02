@@ -1,0 +1,571 @@
+---
+title: "Data transformation using dplyr (aka five verbs)"
+author: "Taavi Päll"
+date: "2018-03-11"
+output: github_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Introduction
+
+I our previous classes we were working with small and cleaned up **mgp** dataset to go through steps of creating some of the most common visualisation types. 
+
+In data analysis workflow you need to plot out data at two points:
+
+1. During **exploratory data analysis** where you learn to know your dataset and 
+2. **reporting** when you try to communicate what you have found. 
+
+Importantly, ata analysis is not a linear process, but an iterative process of data transformation, modeling and visualisation. 
+
+
+
+Here we add another step to data analysis process: data transformation.
+
+In most cases you need to transform your data during analysis, because in real life you rarely start with a dataset that is in the right form for visualisation and modeling. 
+
+
+Usually you will need to:
+
+- summarise your data, 
+- create new variables, 
+- rename variables, 
+- reorder the observations. 
+
+
+We are going to use the dplyr library from tidyverse to learn how to carry out these tasks. 
+
+## Sources
+
+Again, we are going to follow closely R4DS book chapter "Data transformation" available 
+
+- from http://r4ds.had.co.nz/transform.html.    
+- More examples are available from https://rstats-tartu.github.io/lectures/tidyverse.html#dplyr-ja-selle-viis-verbi
+
+
+Load tidyverse library and dataset:
+
+```{r}
+library(tidyverse)
+library(lubridate) # library to work with dates and time
+library(here) # (always) locate files in your project folder P.S. load here after lubridate, because lubridate has also (now deprecated) function called here
+```
+
+### Viruses data 
+
+Viruses data contains virus strain taxonomic and genome info, dataset was downloaded from NCBI. Please see README.md in data folder.
+
+
+```{r}
+download.file("https://raw.githubusercontent.com/rstats-tartu/datasets/master/viruses.csv", here("data", "viruses.csv"))
+```
+
+Let's import viruses.csv file from data subfolder: 
+```{r}
+(viruses <- read_csv(here("data", "viruses.csv")))
+```
+
+
+here() uses clever heuristics to identify your working directory and updates file paths respectively:
+
+```{r}
+here("data", "viruses.csv")
+```
+
+Set up here like so, cd to your working directory and run:
+```{r}
+here::set_here()
+```
+
+
+You could also just run:
+```{r, eval=FALSE}
+viruses <- read_csv("data/viruses.csv")
+```
+
+
+## dplyr basics
+
+Most of the data transformation tasks can be carried out using five verbs from dplyr library:
+
+- Pick observations by their values (filter()).
+- Reorder the rows (arrange()).
+- Pick variables by their names (select()).
+- Create new variables with functions of existing variables (mutate()).
+- Collapse many values down to a single summary (summarise()).
+
+- These can all be used in conjunction with group_by() which changes the scope of each function from operating on the entire dataset to operating on it group-by-group. 
+
+
+These six functions provide the verbs for a language of data manipulation.
+
+All verbs work similarly:
+
+- The first argument is a data frame.
+
+- The subsequent arguments describe what to do with the data frame, using the variable names (without quotes).
+
+- The result is a new data frame.
+
+Together these properties make it easy to chain together multiple simple steps to achieve a complex result. Let's dive in and see how these verbs work.
+
+
+## Filter rows with filter()
+
+filter() allows you to subset observations based on their values.
+
+The first argument is the name of the data frame. The second and subsequent arguments are the expressions that filter the data frame. 
+
+For example, we can filter bacterial viruses:
+
+```{r}
+filter(viruses, host == "bacteria")
+```
+
+dplyr runs the filtering operation and returns a new data frame. 
+
+dplyr functions never modify their inputs, so if you want to save the result, you'll need to use the assignment operator, <-, like so:
+
+Assign bacterial viruses to object phages:
+```{r}
+phages <- filter(viruses, host == "bacteria")
+phages
+```
+
+### Comparisons
+
+What is this == operator? Why not use = to check equality:
+
+```{r, eval=FALSE}
+filter(viruses, host = "bacteria")
+```
+
+It appears that = is another assignment operator besides ->
+
+There's another common problem you might encounter when using ==: floating point numbers. 
+
+Although, theoretically TRUE, following comparisons return FALSE!
+
+```{r}
+sqrt(2) ^ 2 == 2
+1/49 * 49 == 1
+```
+
+This is because computers and R use finite precision arithmetic and cannot store an infinite number of digits.
+
+This can be overcome by using near() function instead of ==:
+```{r}
+near(sqrt(2) ^ 2,  2)
+near(1 / 49 * 49, 1)
+```
+
+### Logical operators
+
+Multiple comparisons within filter() function are combined with comma "," which means "and" (&). 
+
+In case of "and" all comparisons must evaluate to TRUE for observations to be returned.
+
+Together, logical (boolean) operators are:
+
+- & is AND, 
+- | is OR, 
+- ! is NOT
+
+
+
+The following code finds all viruses with genome info release date in 2019 OR in 2018, 
+note that we use year function from lubridate package to extract year of release from date:
+
+```{r}
+year(ymd("2017 08 27")) # lubridate library
+
+filter(viruses, year(release_date) == 2019 | year(release_date) == 2018)
+```
+
+You can't write something like filter(flights, month == 11 | 12) and in case of numeric 
+years this will give you wrong answer instead of Error, so be careful:
+
+```{r, eval=FALSE}
+filter(viruses, year(release_date) == 2019 | 2018)
+```
+
+A useful short-hand for this problem is x %in% y. This will select every row where x is one of the values in y:
+
+Filter observations where year of release_date is 2019 or 2018:
+```{r}
+filter(viruses, year(release_date) %in% c(2019, 2018))
+```
+
+What happens under the hood:
+```{r, eval=FALSE}
+year(viruses$release_date) %in% c(2019, 2018)
+```
+
+
+Remember that (De Morgan's law):   
+
+- !(x & y) is the same as !x | !y  
+- !(x | y) is the same as !x & !y  
+
+
+For example, if you wanted to find viruses with genome sizes between 1 to 2 kb, you could use either of the following two filters, note that in the first case we are excluding viruses with genomes smaller than 1kb or bigger than 2kb:
+
+```{r}
+filter(viruses, !(size_kb < 1 | size_kb > 2))
+```
+
+Previous expression can be rewritten like so:
+```{r}
+filter(viruses, !(size_kb < 1), !(size_kb > 2))
+```
+
+
+```{r}
+filter(viruses, size_kb >= 1, size_kb <= 2)
+```
+
+Which one from these three is more explicit? Note that comma here in filter function between logical evaluations means "&".
+
+"Small than", "bigger than" an "NOT":
+```{r}
+3 >= c(2, 3, 4)
+3 <= c(2, 3, 4)
+3 != c(2, 3, 4)
+```
+
+
+
+
+### Missing values
+
+One important feature of R that can make comparison tricky are missing values, or NAs ("not availables"). 
+
+NA represents an unknown value so missing values are "contagious": 
+
+almost any operation involving an unknown value will also be unknown.
+
+```{r}
+NA > 5
+10 == NA
+NA + 10
+NA / 2
+```
+
+As Rsudio already might suggest, if you want to determine if a value is missing, use is.na():
+```{r}
+x <- NA
+is.na(x)
+```
+
+Let's use is.na() within filter to filter rows with missing GC content data (variable called "gc"):
+```{r}
+filter(viruses, is.na(gc))
+```
+
+Ok. Now we got all rows with missing gc... how would you change this code to really exclude these rows with missing data (Hint: !FALSE):
+```{r}
+filter(viruses, !is.na(gc))
+```
+
+
+There are other functions that remove rows with NA in any of the columns from your data frame and keep only "complete cases":
+
+```{r}
+na.exclude(viruses)
+na.omit(viruses)
+drop_na(viruses)
+```
+
+### Finding non-exact matches
+
+Often you find yourself in need to filter categorical variables based on some non-exact matching, for example when 
+
+- values are too long,   
+- there are too many unique unkown values,   
+- some observations that belong to the same category have slightly different values (`foo bar` and `foo-bar` and `foobar`). 
+
+To solve this problem more elegantly, you can use regular expressions. (for help see ?`regular expression`)
+
+regular expressions are covered in *tidyverse* by the **stringr** package. 
+
+
+The stringr function that is useful within filter is str_detect(). Although, stringr belongs to tidyverse, it is not loaded together with core tidyverse packages by default, so you need to load it separately.
+
+
+```{r}
+library(stringr)
+fruits <- c("banana", "foo TRUMP bar", "foo bar", "foo-bar", "foobar", "foo")
+str_detect(fruits, "foo(.*)?bar")
+```
+
+As you can see, str_detect() returns logical vector.
+
+So how this should work when you run str_detect inside filter?
+
+Salmonalla viruses:
+```{r}
+filter(viruses, str_detect(organism_name, "Salmonella"))
+```
+
+
+
+### Exercises
+
+1. Find all viruses that:
+
+- have genome of over 10000kb
+
+```{r}
+
+```
+
+- belong to *Papillomaviridae*
+
+```{r}
+
+```
+
+- are from plants and environment
+
+```{r}
+
+```
+
+- were released between 01. January 1980 - 01. January 1990, including these days:
+
+```{r}
+filter(viruses, release_date > "1980-01-01", release_date < "1990-01-01")
+```
+
+2. there is also between() function in dplyr. What does it do? How can you use it to find viruses with genomes between 1 to 2 kb?
+```{r}
+
+```
+
+3. How many viruses belong to "unclassified" subgroup:
+
+```{r}
+
+```
+
+
+```{r}
+filter(viruses, str_detect(str_to_lower(organism_name), "enterovi"))
+```
+
+
+## Arrange rows with arrange()
+
+arrange() works similarly to filter() except that instead of selecting rows, it changes their order.
+
+It takes a data frame and a set of column names to order by. 
+
+If you provide more than one column name, each additional column will be used to break ties in the values of preceding columns:
+
+```{r}
+arrange(viruses, size_kb)
+```
+
+Use desc() to re-order by a column in descending order. You can combine variables:
+```{r}
+arrange(viruses, organism_name, desc(size_kb))
+```
+
+Missing values are always sorted at the end, even with desc() function:
+```{r}
+df <- tibble(x = c(5, NA, 2))
+arrange(df, x)
+```
+
+```{r}
+arrange(df, desc(x))
+```
+
+
+### Get unique rows with distinct()
+
+Sometimes observations become duplicated during data wrangling, sometimes you need to get unique combinations of observations. 
+dplyr has distinct() function to retain only unique rows from input table.
+
+
+viruses data has `r nrow(viruses)` rows, but what if we would like to get only unique organism_name and tax_id combinations...  
+First let's select organism_name and tax_id columns
+```{r}
+taxids <- select(viruses, 1:2)
+taxids
+```
+
+Here we are... with distinct organism_name tax_id combinations.
+```{r}
+distinct(taxids)
+```
+
+distinct() works on tables
+```{r}
+?distinct
+```
+
+unique() function from base R works on vectors
+```{r}
+x <- rep(letters[1:3], each = 3) # simulate character vector x with repetitions
+x
+unique(x) # select unique set of values from x
+```
+
+
+### Exercises
+
+1. How could you use arrange() to sort viruses with missing gc values to the start? (Hint: use is.na()).
+
+```{r}
+arrange(viruses, !is.na(gc))
+```
+
+
+2. Sort viruses to find viruses with highest GC% content:
+
+```{r}
+arrange(viruses, desc(gc))
+```
+
+
+## Select columns with select()
+
+select() allows you to rapidly zoom in on a useful subset of columns using operations based on the names of the variables.
+
+Select first three columns:
+```{r}
+select(viruses, 1:3)
+```
+
+Select columns from group to host:
+```{r}
+select(viruses, group:host)
+select(viruses, host:group)
+```
+
+!!! select works in both directions: L>R and R<L!
+
+
+
+select organism_name, size_kb, gc:
+```{r}
+select(viruses, organism_name, size_kb, gc)
+```
+
+
+Exlude columns bioproject_accession, bioproject_id, segments:
+```{r}
+select(viruses, -bioproject_accession, -bioproject_id, -segments)
+```
+
+Another way, exclude as a vector, in case of vector use quoted variable names!:
+```{r}
+vars_out <- c("bioproject_accession", "bioproject_id", "segments")
+select(viruses, -vars_out)
+```
+
+This expression will fail, because we don't have objects called bioproject_accession etc in our R environment!
+```{r, eval=FALSE}
+vars_out <- c(bioproject_accession, bioproject_id, segments)
+```
+
+
+Use minus sign to exclude variables! 
+
+> Submit variables to select as character vector!
+
+
+There are a number of __helper functions you can use within select()__:
+
+- starts_with("abc"): matches names that begin with "abc".
+
+Select columns that start with "bio"
+```{r}
+select(viruses, starts_with("bio"))
+```
+
+
+- ends_with("xyz"): matches names that end with "xyz".
+
+
+Select columns that end with "date"
+```{r}
+select(viruses, ends_with("date"))
+```
+
+
+- contains("ijk"): matches names that contain "ijk".
+
+All columns that contain word "project"
+```{r}
+select(viruses, contains("project"))
+```
+
+
+- matches("(.)\\1"): selects variables that match a regular expression. 
+
+This one matches any variables that contain repeated characters. You'll learn more about regular expressions in strings.
+
+```{r, eval = FALSE}
+matches("^abc") # same as starts_with("abc")
+matches("xyz$") # same as ends_with("xyz")
+matches("ijk") # same as contains("ijk")
+```
+
+Select columns/variables with punctuation marks: 
+```{r}
+select(viruses, matches("[[:punct:]]"))
+```
+
+
+- num_range("V", 1:10000) matches V1, V2 and V3.
+
+
+- everything() is useful if you have a handful of variables you'd like to move to the start of the data frame.
+
+Move columns tax_id, size_kb and gc to the start of the data frame, and keep all other columns.
+
+You can rearrange the order of columns.
+```{r}
+select(viruses, tax_id, size_kb, gc, everything())
+```
+
+
+See ?select for more details.
+
+
+### Exercises
+
+1. What happens if you include the name of a variable (e.g. gc) multiple times in a select() call?
+
+```{r}
+select(viruses, gc, gc, gc)
+```
+
+
+2. What does the one_of() function do? 
+
+Why might it be helpful in conjunction with this vector?
+```{r}
+(vars <- c("tax_id", "gc", "fffffff"))
+select(viruses, one_of(vars))
+```
+
+What happens if you try to select columns just by using this vector:
+
+```{r, eval=FALSE}
+select(viruses, c("tax_id", "gc", "fffffff"))
+```
+
+3. Select all variables from 'viruses' dataset that contain string 'GC' (note case!). 
+
+Does the result of running the following code surprise you? How do the select helpers deal with case by default? How can you change that default?
+
+```{r}
+?select
+select(viruses, contains("GC", ignore.case = TRUE))
+```
+

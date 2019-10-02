@@ -1,0 +1,601 @@
+---
+title: "Data transformation using dplyr (aka five verbs) 2"
+author: "Taavi Päll"
+date: "2019-03-11"
+output: github_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Load tidyverse library and dataset:
+```{r}
+library(tidyverse)
+library(lubridate)
+library(here)
+```
+
+Import viruses.csv file from data subfolder, note that some genes and proteins values are labelled with "-", we consider them missing values and assign NA to them: 
+```{r}
+viruses <- read_csv(here("data", "viruses.csv"), na = c(NA, "-"))
+viruses
+```
+
+
+## Add new variables with mutate()
+
+
+- mutate() allows you to modify or create new variables (columns) in a dataset.   
+- mutate works on vectors!   
+- mutate does not reduce/change the number of rows in tibble!   
+- mutate always adds columns to the end of dataset
+
+Based on viruses dataset, there are not many questions that we would ask that need creation of new variables. 
+
+However, based on genome size and number of genes and proteins we can calculate gene density per kb:
+
+Let's create smaller more focussed dataset by selecting organism_name, tax_id, size_kb, genes, proteins columns:
+```{r}
+genes_kb <- select(viruses, organism_name, tax_id, size_kb, genes, proteins)
+genes_kb
+```
+
+For start, we can see that some viruses have either genes or proteins missing. 
+
+We can create a new variable where we fill in missing gene numbers with protein number if available:
+
+dplyr has function case_when() that vectorises multiple if and else if statements:
+
+```{r}
+genes_kb <- mutate(genes_kb, 
+                   orfs = case_when(
+                     is.na(genes) ~ proteins,
+                     TRUE ~ genes
+                   ))
+genes_kb
+```
+
+Here we created new variable "orfs" and assigned proteins number to it in cases where we had missing gene number. 
+
+
+All other cases (TRUE) we assigned genes value to orfs.
+
+Now we are ready to calculate number of orfs per kb (orfs / size_kb):
+
+```{r}
+genes_kb <- mutate(genes_kb, orfs_kb = orfs / size_kb)
+genes_kb
+```
+
+Excercise: plot distribution of orfs / size_kb (try out log scale on x axis):
+
+```{r}
+ggplot(data = genes_kb) +
+  geom_histogram(aes(orfs_kb), bins = 30) +
+  scale_x_log10()
+```
+
+
+There is also transmute (?transmute) a close cousin of mutate that drops all other columns except the new modified column: 
+```{r}
+transmute(genes_kb, orfs_kb = orfs / size_kb)
+```
+
+
+
+## Useful creation functions
+
+There are many functions for creating new variables that you can use with mutate(). 
+
+> The key property is that the function must be vectorised: it must take a vector of values as input, return a vector with the same number of values as output. 
+
+Some of the functions are familiar from base R class: 
+- Arithmetic operators: +, -, *, /, ^.
+
+Arithmetic operators are also useful in conjunction with the aggregate functions. 
+
+For example, x / sum(x) calculates the proportion of a total, and y - mean(y) computes the difference from the mean.
+
+Let's calculate the difference of gc values from the global mean, name new variable gc_diff:
+```{r}
+mutate(viruses, gc_diff = gc - mean(gc, na.rm = TRUE))
+```
+
+
+- Modular arithmetic: %/% (integer division) and %% (remainder, modulus), where x == y * (x %/% y) + (x %% y). 
+
+Modular arithmetic is a handy tool because it allows you to break integers up into pieces. 
+
+For example, in the tidyverse flights dataset, you can compute hour and minute from dep_time with:
+
+To demonstrate modulo and integer division, let's quickly introduce new dataset:
+```{r}
+library(nycflights13)
+flights
+```
+
+Here we use modulo and integer arithmetic operators to wrangle data, note the use of transmute:
+```{r}
+transmute(flights,
+  dep_time,
+  hour = dep_time %/% 100,
+  minute = dep_time %% 100
+)
+```
+
+- Logs: log(), log2(), log10(). Note that log() converts to natural logarithm.
+
+To demonstrate logs in action, we can look at the virus genome size. 
+
+First, let's plot distribution of virus genomes on linear scale:
+
+
+```{r}
+ggplot(viruses) +
+  geom_histogram(aes(size_kb), bins = 30) +
+  scale_y_log10()
+```
+
+Here we use transmute to focus on genome size:
+```{r}
+viruses_log <- transmute(viruses, size_kb, log_size = log10(size_kb))
+viruses_log
+```
+
+Seems that they are not normally distributed... and most of the values are concentrated at the left side.
+
+We can have better look at the distribution by using log transformaton.
+
+First we filter distinct tax_id and size_kb combinations.
+Then we use mutate to log transform size_kb.
+Finally, plot out new distribution.
+
+```{r}
+ggplot(viruses_log) +
+  geom_histogram(aes(log_size), bins = 30)
+```
+
+tip: Add some small amount to zeros
+```{r}
+log(0 + 0.01)
+```
+
+We have vectorized function:
+```{r}
+x <- 1:10
+x
+log10(x)
+```
+
+
+- Offsets: lead() and lag() allow you to refer to leading or lagging values. 
+
+This allows you to compute running differences (e.g. x - lag(x)) or find when values change (x != lag(x)).
+
+```{r}
+(x <- 1:10)
+lag(x)
+?lag
+lead(x)
+diff(x) # output is length - 1 !!!!
+diff(c(2,3,5))
+```
+
+- Cumulative and rolling aggregates: R provides functions for running sums, products, mins and maxes: 
+
+cumsum(), 
+cumprod(), 
+cummin(), 
+cummax(); 
+
+and dplyr provides cummean() for cumulative means.
+
+```{r}
+cumsum(x)
+cummean(x)
+```
+
+- Ranking: there are a number of ranking functions, but you should start with min_rank(). 
+
+It does the most usual type of ranking (e.g. 1st, 2nd, 2nd, 4th).
+
+```{r}
+(y <- c(1, 2, 2, NA, 3, 4))
+min_rank(y)
+min_rank(desc(y))
+```
+
+Let's pick smallest and largest virus:
+```{r}
+filter(viruses, min_rank(size_kb) == 1)
+filter(viruses, min_rank(desc(size_kb)) == 1)
+```
+
+There are also row_number(), dense_rank(), percent_rank(), cume_dist(), ntile():
+```{r}
+row_number(y)
+dense_rank(y)
+percent_rank(y)
+cume_dist(y)
+```
+
+### Exercises
+
+- Currently dep_time and sched_dep_time are convenient to look at, but hard to compute with because they're not really continuous numbers. 
+
+Convert them to a more convenient representation of number of minutes since midnight.
+
+```{r}
+flights %>% 
+  select(dep_time, sched_dep_time) %>%
+  transmute(
+    dep_time = ((dep_time %/% 100) * 60) + (dep_time %% 100),
+    sched_dep_time = ((sched_dep_time %/% 100) * 60) + (sched_dep_time %% 100)
+  )
+```
+
+Reuse your code in functions:
+```{r}
+minutes_from_midnight <- function(x) {
+  ((x %/% 100) * 60) + (x %% 100)
+}
+```
+
+```{r}
+flights %>% 
+  select(dep_time, sched_dep_time) %>%
+  transmute(
+    dep_time = minutes_from_midnight(dep_time),
+    sched_dep_time = minutes_from_midnight(sched_dep_time)
+  )
+```
+
+```{r}
+flights %>% 
+  select(dep_time, sched_dep_time) %>%
+  transmute_at(vars(dep_time, sched_dep_time), minutes_from_midnight)
+```
+
+
+## Grouped summaries with summarise()
+
+The last key verb is summarise(). It collapses a data frame to a single row:
+
+```{r}
+summarise(viruses, 
+          size_kb = mean(size_kb, na.rm = TRUE),
+          gc = mean(gc, na.rm = TRUE),
+          genes = mean(genes, na.rm = TRUE)
+          )
+```
+
+
+summarise() is not very useful unless we pair it with group_by(). 
+
+This changes the unit of analysis from the complete dataset to individual groups. 
+
+Then, when you use the dplyr verbs on a grouped data frame they'll be automatically applied "by group". 
+
+For example, if we applied exactly the same code to a data frame grouped by (sub)group, we get the average size_kb per virus group (please print by_group tibble into console to see grouping info):
+
+First, we create grouped by table
+```{r}
+viruses %>% 
+  group_by(., group) %>% 
+  summarise(., size_kb = mean(size_kb, na.rm = TRUE))
+```
+
+Alternatively, previous code can be rewritten like so:
+
+First, we create a grouped table:
+```{r}
+viruses_group <- group_by(viruses, group)
+viruses_group
+```
+
+
+
+Grouping info is silently written into tibble!
+
+Then, by using grouped table calculate summary as previously:
+```{r}
+summarise(viruses_group, size_kb = mean(size_kb))
+```
+
+
+> Together group_by() and summarise() provide one of the main tool that you'll use most frequently when working with dplyr: grouped summaries. 
+
+You can also use group_by atogether with mutate()!
+
+Example of grouped mutate:
+
+```{r}
+transmute(viruses_group, size_kb, diffs = size_kb - mean(size_kb))
+```
+
+
+## Combining multiple operations with the pipe
+
+Imagine that we want to explore genome size for the subgroups in dsDNA viruses. 
+
+Using what you know about dplyr, you might write code like this (step by step, no pipes!):
+
+```{r}
+by_subgroup <- group_by(viruses, subgroup, group)
+subgroup_sizes <- summarise(by_subgroup, size_kb = mean(size_kb, na.rm = TRUE))
+dsdna_sizes <- filter(subgroup_sizes, str_detect(group, "dsDNA"))
+arrange(dsdna_sizes, desc(size_kb))
+```
+
+Visualise summarised data by bargraph: 
+```{r}
+ggplot(data = dsdna_sizes) +
+  geom_col(aes(x = reorder(str_replace(subgroup, "viridae", ""), desc(size_kb)), y = size_kb)) +
+  labs(x = "Virus subgroup") +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))
+```
+
+
+
+There are four steps to prepare this data:
+
+- Group viruses by subgroup and group.
+
+- Summarise to compute mean size.
+
+- Filter to include only dsDNA viruses.
+
+- we arranged rows so that viruses with biggest genomes show on top.
+
+
+This code is a little frustrating to write because we have to give each intermediate data frame a name, even though we don't care about it. 
+
+Naming things is hard, so this slows down our analysis.
+
+There's another way to tackle the same problem with the pipe, %>%:
+
+Previous code with pipes:
+```{r}
+viruses %>% 
+  group_by(subgroup, group) %>% 
+  summarise(size_kb = mean(size_kb, na.rm = TRUE)) %>% 
+  filter(str_detect(group, "dsDNA")) %>% 
+  arrange(desc(size_kb))
+```
+
+
+This focuses on the transformations, not what's being transformed, which makes the code easier to read. 
+
+You can read it as a series of imperative statements: group, then summarise, then filter and arrange. 
+
+As suggested by this reading, a good way to pronounce %>% when reading code is "then".
+
+> Behind the scenes, x %>% f(y) turns into f(x, y), and x %>% f(y) %>% g(z) turns into g(f(x, y), z) and so on. You can use the pipe to rewrite multiple operations in a way that you can read left-to-right, top-to-bottom. 
+
+## Counts
+
+Whenever you do any aggregation, it's always a good idea to include either a count (n()), or a count of non-missing values (sum(!is.na(x))).
+
+Calculate mean size_kb per group and subgroup and **count number of rows in each group**:
+```{r}
+viruses %>% 
+  group_by(subgroup, group) %>% 
+  summarise(size_kb = mean(size_kb, na.rm = TRUE),
+            n = n())
+```
+
+
+## Useful summary functions
+
+R provides many useful summary functions:
+
+- Measures of location: we have used mean(x), but median(x) is also useful. 
+
+- Measures of spread: sd(x), IQR(x), mad(x). 
+
+The mean squared deviation, or standard deviation or sd for short, is the standard measure of spread. 
+
+The interquartile range IQR() and median absolute deviation mad(x) are robust equivalents that may be more useful if you have outliers
+
+Calculate these five summary stats for size_kb:
+```{r}
+viruses %>% 
+  group_by(subgroup, group) %>% 
+  summarise(Mean = mean(size_kb),
+            Median = median(size_kb),
+            q0.5 = quantile(size_kb, 0.5),
+            SD = sd(size_kb),
+            iqr = IQR(size_kb),
+            MAD = mad(size_kb))
+```
+
+- Measures of rank: min(x), quantile(x, 0.25), max(x). Quantiles are a generalisation of the median. 
+
+For example, quantile(x, 0.25) will find a value of x that is greater than 25% of the values, and less than the remaining 75%.
+
+```{r}
+viruses %>% 
+  group_by(subgroup, group) %>% 
+  summarise(size_min = min(size_kb, na.rm = TRUE),
+            size_max = max(size_kb, na.rm = TRUE),
+            size_diff = size_max - size_min,
+            n = n())
+```
+
+
+- Measures of position: first(x), nth(x, 2), last(x). 
+
+These work similarly to x[1], x[2], and x[length(x)] but let you set a default value if that position does not exist (i.e. you're trying to get the 3rd element from a group that only has two elements). For example, we can find the first and last departure for each day:
+
+Here, we use flights dataset:
+```{r}
+not_cancelled <- flights %>% 
+  filter(!is.na(dep_delay), !is.na(arr_delay))
+
+not_cancelled %>% 
+  group_by(year, month, day) %>% 
+  summarise(
+    first_dep = first(dep_time), 
+    last_dep = last(dep_time)
+  )
+```
+
+- Counts: You've seen n(), which takes no arguments, and returns the size of the current group. 
+
+To count the number of non-missing values, use sum(!is.na(x)). 
+
+To count the number of distinct (unique) values, use n_distinct(x).
+
+```{r}
+# Which destinations have the most carriers?
+not_cancelled %>% 
+  group_by(dest) %>% 
+  summarise(carriers = n_distinct(carrier),
+            carriers_old_way = length(unique(carrier))) %>% 
+  arrange(desc(carriers))
+```
+
+
+Counts are so useful that dplyr provides a simple helper if all you want is a count. 
+
+Number of rows per subgroup:
+```{r}
+viruses %>% 
+  count(subgroup, sort = TRUE)
+```
+
+
+- Counts and proportions of logical values: sum(x > 10), mean(y == 0). 
+
+When used with numeric functions, TRUE is converted to 1 and FALSE to 0. 
+
+This makes sum() and mean() very useful: sum(x) gives the number of TRUEs in x, and mean(x) gives the proportion.
+
+Number and proportion of genomes of size_kb > 5 in each subgroup:
+
+```{r}
+viruses %>% 
+  group_by(subgroup) %>% 
+  summarise(n = sum(size_kb > 5),
+            p = mean(size_kb > 5))
+```
+
+## Grouping by multiple variables
+
+When you group by multiple variables, each summary peels off one level of the grouping. That makes it easy to progressively roll up a dataset:
+
+Number of rows per tax_id:
+
+```{r}
+by_group <- viruses %>% 
+  group_by(group, subgroup, tax_id) 
+rows_by_taxid <- summarise(by_group, n = n())
+rows_by_taxid
+```
+
+```{r}
+rows_by_subgroup <- rows_by_taxid %>% 
+  summarise(n = sum(n))
+rows_by_subgroup
+```
+
+```{r}
+rows_by_group <- rows_by_subgroup %>% 
+  summarise(n = sum(n))
+rows_by_group
+```
+
+> Be careful when progressively rolling up summaries: it's OK for sums and counts, but you need to think about weighting means and variances, and it’s not possible to do it exactly for rank-based statistics like the median. In other words, the sum of groupwise sums is the overall sum, but the median of groupwise medians is not the overall median.
+
+## Ungrouping
+
+If you need to remove grouping, and return to operations on ungrouped data, use ungroup().
+
+```{r}
+by_group %>% 
+  ungroup() %>%             # no longer grouped by year, county and area
+  summarise(n = n())
+```
+
+### Exercises
+
+1. Using nycflights13 flights dataset, brainstorm at least 5 different ways to assess the typical delay characteristics of a group of flights. Consider the following scenarios:
+
+  - A flight is 15 minutes early 50% of the time, and 15 minutes late 50% of the time.
+
+```{r}
+
+```
+
+
+  - A flight is always 10 minutes late.
+
+```{r}
+
+```
+
+  - A flight is 30 minutes early 50% of the time, and 30 minutes late 50% of the time.
+
+  - 99% of the time a flight is on time. 1% of the time it’s 2 hours late.
+
+```{r}
+
+```
+
+
+  - Which is more important: arrival delay or departure delay?
+
+2. Come up with another approach that will give you the same output as not_cancelled %>% count(dest) and not_cancelled %>% count(tailnum, wt = distance) (without using count()).
+
+3. Our definition of cancelled flights (is.na(dep_delay) | is.na(arr_delay) ) is slightly suboptimal. Why? Which is the most important column?
+
+4. Look at the number of cancelled flights per day. Is there a pattern? Is the proportion of cancelled flights related to the average delay?
+
+5. Which carrier has the worst delays? Challenge: can you disentangle the effects of bad airports vs. bad carriers? Why/why not? (Hint: think about flights %>% group_by(carrier, dest) %>% summarise(n()))
+
+6. What does the sort argument to count() do. When might you use it?
+
+## Grouped mutates (and filters)
+
+Grouping is most useful in conjunction with summarise(), but you can also do convenient operations with mutate() and filter():
+
+- Find the largest (#1) virus(es) for each subgroup by using min_rank():
+
+```{r}
+
+```
+
+- Find all groups with average bigger than a threshold:
+
+```{r}
+
+```
+
+- Standardise to compute per group metrics (sweep):
+
+Subtract (divide, multiply, %/%) group mean from size_kb:
+
+```{r}
+size_norm <- viruses %>%
+  group_by(group, subgroup) %>% 
+  transmute(size_diff = size_kb - mean(size_kb))
+```
+
+We can verify that now, group means are almost zero:
+```{r}
+size_norm %>% 
+  group_by(group, subgroup) %>% 
+  summarise(Mean = mean(size_diff)) %>% 
+  filter(near(Mean, 0))
+```
+
+
+```{r}
+size_norm %>% 
+  ggplot() +
+  geom_boxplot(aes(x = subgroup, y = size_diff)) +
+  scale_y_log10()
+```
+
+
