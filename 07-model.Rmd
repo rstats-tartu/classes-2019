@@ -183,7 +183,7 @@ This one comes from modelr package.
 rmse(model, iris)
 ```
 
-Residuals, difference between predicted and original vales, can be obtained also by resid() function:
+Residuals, difference between predicted and original values, can be obtained also by resid() function:
 ```{r}
 resid(model)
 ```
