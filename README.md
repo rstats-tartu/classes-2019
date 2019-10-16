@@ -20,6 +20,12 @@ git remote add upstream https://github.com/rstats-tartu/classes-2019.git
 
 ![](graphs/upstream.png)
 
+## Update your repo from upstream
+
+```
+git pull upstream master
+```
+
 ## Data visualisation using ggplot2
 Why visualisation matters slides: https://taltech19-visualisation-matters.netlify.com/#1
 
