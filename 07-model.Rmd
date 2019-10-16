@@ -1,0 +1,204 @@
+---
+title: "Model"
+date: "2019-03-25"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Models
+
+There are two parts to a model:
+
+1. First, you define a *family of models* where you specify what is the generic relationship between dependent and independent variables. 
+
+y = a + b * x, where y and x are variables in your data and a and b are model coeficients that are unknown.
+
+2. Next, you generate a *fitted model* by finding the model from the family that is closest to your data. 
+
+Fitted model can look something like y = 30 + 3 * x.
+
+## Linear model
+
+```{r}
+library(tidyverse)
+library(broom)
+library(modelr)
+```
+
+
+First, lets have 1:1 relationship between dependent (y) and independent variable (x).
+
+Simplest model y = x where Intercept is always set to 0 and slope = 1.
+
+Generate data:
+
+```{r}
+x <- 0:100
+y <- x
+```
+
+
+Plot:
+
+```{r}
+p <- tibble(x, y) %>% 
+  ggplot() +
+  geom_line(aes(x, y)) +
+  geom_abline(linetype = "dashed")
+p
+```
+
+Let's add variable Intercept to the model.
+
+y = a + x
+
+Lets assign random value 30 to a:
+
+```{r}
+x <- 0:100 
+a <- 30
+y <- a + x
+```
+
+
+
+```{r}
+tibble(x, y) %>% 
+  ggplot() +
+  geom_line(aes(x, y)) +
+  geom_abline(linetype = "dashed")
+```
+
+Setting a to 30 moved line upwards and y = 30 when line crosses x axis.
+
+Intercept determines y value when x = 0.
+
+What happens when we multiply x with constant instead of addition:
+
+y =  b * x
+
+Let's assign random value 3 to b.
+
+```{r}
+x <- 0:200
+b <- 3
+y <- b * x
+```
+
+
+```{r}
+tibble(x, y) %>% 
+  ggplot() +
+  geom_line(aes(x, y)) +
+  geom_abline(linetype = "dashed")
+```
+
+Now we changed slope of the line, which specifies how much y changes when x changes 1 unit.
+When b = 3, then x increases by 1 then y increases by 3 units.
+
+Full simple linear formula with tunable Intercept and slope 
+
+y = a + b * x
+
+```{r}
+a <- 30
+b <- 3
+x <-  0:100 
+y <-  a + b * x
+```
+
+
+```{r}
+tibble(x, y) %>% 
+  ggplot() +
+  geom_line(aes(x, y)) +
+  geom_abline(linetype = "dashed")
+```
+
+
+Fitting Sepal.length vs Petal.length using iris dataset:
+```{r}
+model <- lm(Sepal.Length ~ Petal.Length, data = iris)
+summary(model)
+```
+
+### Visualising a model
+
+augment function from broom package adds predicted values from model to original data frame under variable .fitted:
+
+```{r}
+augment(model, iris) %>% 
+  ggplot(aes(Petal.Length, Sepal.Length)) +
+  geom_point(aes(color = Species)) +
+  geom_line(aes(y = .fitted))
+```
+
+Predictions can be added to data also with add_predictions() function from modelr package:
+```{r}
+library(modelr)
+add_predictions(iris, model)
+```
+
+
+To predict Sepal.length from our model we need model coeficients -- Intercept and slope.
+
+Model coeficients can be extracted with coef() function:
+```{r}
+coef(model)
+```
+
+Here a = (Intercept) ja b (slope) = Petal.Length ehk 0.41.
+
+## Predict from linear model
+
+Let's extract model coeficients and plug into a linear model formula:
+```{r }
+a <- coef(model)[1] # Intercept
+b <- coef(model)[2] # slope
+petal_length <- iris$Petal.Length
+sepal_length <-  a + b * petal_length
+```
+
+We can estimate goodness of fit from our predictions by calculating the root-mean-square error (RMSE). 
+
+RMSE is a measure of the differences between values predicted by a model and the values observed.
+
+RMSE is always non-negative, and a value of 0 (almost never achieved in practice) would indicate a perfect fit to the data. In general, a lower RMSD is better than a higher one.
+
+Here we calculate RSME "manually" to illustrate how it's obtained:
+```{r}
+(sepal_length - iris$Sepal.Length) %>%
+  (function(x) x^2) %>% 
+  sum() %>% 
+  (function(x) x / length(sepal_length)) %>% 
+  sqrt()
+```
+
+But there are also functions around to calculate RMSE. 
+This one comes from modelr package.
+```{r}
+rmse(model, iris)
+```
+
+Residuals, difference between predicted and original values, can be obtained also by resid() function:
+```{r}
+resid(model)
+```
+
+And residuals can be added to original dataframe with add_residuals function from modelr:
+```{r}
+iris %>% add_residuals(model)
+```
+
+How does fit look like, are residuals ~normally distributed:
+```{r}
+iris %>% 
+  add_residuals(model) %>% 
+  ggplot() +
+  geom_histogram(aes(resid), bins = 30)
+```
+
+
